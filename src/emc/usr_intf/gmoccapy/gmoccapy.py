@@ -2716,6 +2716,12 @@ class gmoccapy(object):
             
 # hal status End
 # =========================================================
+    def on_window1_size(self, widget, data=None):
+        buttonsize = (85*widget.get_size()[0]/1024, 56*widget.get_size()[1]/768)
+        self.widgets.tbtn_estop.set_size_request(85, buttonsize[1])
+        self.widgets.btn_homing.set_size_request(buttonsize[0], buttonsize[1])
+        self.widgets.btn_delete.set_size_request(buttonsize[0], buttonsize[1])        
+        print("size changed to ", buttonsize)
 
     # There are some settings we can only do if the window is on the screen already
     def on_window1_show(self, widget, data=None):
