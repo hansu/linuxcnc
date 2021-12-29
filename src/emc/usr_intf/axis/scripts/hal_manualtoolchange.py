@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import sys, os
 import gettext
-BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
+import linuxcnc, hal
+import nf, rs274.options
+import tkinter
 
+BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
-import linuxcnc, hal
-
 _after = None
-def hal_in_background():
+def poll_hal_in_background():
     global _after
     _after = None
     if not h.change:
@@ -22,11 +23,11 @@ def hal_in_background():
         stop_polling_hal_in_background()
         return
 
-    _after = app.after(100, hal_in_background)
+    _after = app.after(100, poll_hal_in_background)
 
-def poll_hal_in_background():
+def start_polling_hal_in_background():
     global _after
-    _after = app.after(100, hal_in_background)
+    _after = app.after(100, poll_hal_in_background)
 
 def stop_polling_hal_in_background():
     global _after
@@ -40,7 +41,7 @@ def do_change(n):
         message = _("Remove the tool and click continue when ready")
     app.wm_withdraw()
     app.update()
-    poll_hal_in_background()
+    start_polling_hal_in_background()
     try:
         r = app.tk.call("nf_dialog", ".tool_change",
             _("Tool change"), message, "info", 0, _("Continue"))
@@ -51,16 +52,16 @@ def do_change(n):
         h.changed = True
     app.update()
 
+def withdraw():
+    app.wm_withdraw()
+    app.bind("<Expose>", lambda event: app.wm_withdraw())
+
 h = hal.component("hal_manualtoolchange")
 h.newpin("number", hal.HAL_S32, hal.HAL_IN)
 h.newpin("change", hal.HAL_BIT, hal.HAL_IN)
 h.newpin("change_button", hal.HAL_BIT, hal.HAL_IN)
 h.newpin("changed", hal.HAL_BIT, hal.HAL_OUT)
 h.ready()
-
-import nf, rs274.options
-
-import tkinter
 
 app = tkinter.Tk(className="AxisToolChanger")
 app.wm_geometry("-60-60")
@@ -72,11 +73,6 @@ lab = tkinter.Message(app, aspect=500, text = _("\
 This window is part of the AXIS manual toolchanger.  It is safe to close \
 or iconify this window, or it will close automatically after a few seconds."))
 lab.pack()
-
-def withdraw():
-    app.wm_withdraw()
-    app.bind("<Expose>", lambda event: app.wm_withdraw())
-
 app.after(10 * 1000, withdraw)
 
 try:
