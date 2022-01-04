@@ -4,6 +4,9 @@ import gettext
 import linuxcnc, hal
 import nf, rs274.options
 import tkinter
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
@@ -42,13 +45,37 @@ def do_change(n):
     app.wm_withdraw()
     app.update()
     start_polling_hal_in_background()
+
+   
     try:
-        r = app.tk.call("nf_dialog", ".tool_change",
-            _("Tool change"), message, "info", 0, _("Continue"))
+        # todo
+        if 1:            
+            dialog = Gtk.Dialog(_("Tool change"), Gtk.Window(), None)
+            dialog.connect("delete-event", lambda w, d: w.run())
+            print(dialog.get_toplevel())
+            label = Gtk.Label.new(message)
+            button = Gtk.Button.new_with_mnemonic(_("_Continue"))
+            button.set_size_request(-1, 60)
+            button.connect("clicked",lambda w:dialog.response(Gtk.ResponseType.OK))
+            box = Gtk.HButtonBox()
+            box.add(button)
+            dialog.vbox.pack_start(label, True, True, 5)
+            dialog.vbox.pack_end(box, True, True, 0)
+            dialog.set_border_width(5)
+            dialog.show_all()
+            r = dialog.run()
+            print ("r=", r)
+            dialog.destroy()
+            dialog.show_all()
+        else:
+            r = app.tk.call("nf_dialog", ".tool_change",
+                _("Tool change"), message, "info", 0, _("Continue"))
     finally:
+        dialog.destroy()
         stop_polling_hal_in_background()
     if isinstance(r, str): r = int(r)
-    if r == 0:
+    # todo:
+    if r == 0 or r == Gtk.ResponseType.OK:
         h.changed = True
     app.update()
 
