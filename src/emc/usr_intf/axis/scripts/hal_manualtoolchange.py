@@ -16,13 +16,13 @@ def poll_hal_in_background():
     global _after
     _after = None
     if not h.change:
-        app.tk.call("set", "::tkPriv(button)", -1)
+        app.tk.call("destroy", ".tool_change")
         return
 
     if (h.change_button):
         h.changed = True
         app.update()
-        app.tk.call("set", "::tkPriv(button)", -1)
+        app.tk.call("destroy", ".tool_change")
         stop_polling_hal_in_background()
         return
 
@@ -68,10 +68,9 @@ def do_change(n):
             dialog.destroy()
             dialog.show_all()
         else:
-            r = app.tk.call("nf_dialog", ".tool_change",
+            r = app.tk.call("tk_dialog", ".tool_change",
                 _("Tool change"), message, "info", 0, _("Continue"))
     finally:
-        dialog.destroy()
         stop_polling_hal_in_background()
     if isinstance(r, str): r = int(r)
     # todo:
