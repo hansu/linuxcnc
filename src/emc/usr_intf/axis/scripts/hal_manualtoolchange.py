@@ -7,12 +7,14 @@ import tkinter
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+from gi.repository import GObject
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
 _after = None
 def poll_hal_in_background():
+    print("poll hal in background")
     global _after
     _after = None
     if not h.change:
@@ -37,7 +39,30 @@ def stop_polling_hal_in_background():
     if _after: app.after_cancel(_after)
     _after = None
 
+def periodic():
+    print("periodic")
+    global dialog
+    if not h.change:
+        try:            
+            dialog.response(Gtk.ResponseType.ACCEPT)
+            # print(dialog.get_title())
+        except:
+            print(" +++++++++++++ no dialog")
+        return False
+
+    if (h.change_button):
+        h.changed = True
+        print(" +++++++++++++ change button")
+        try:            
+            dialog.response(Gtk.ResponseType.ACCEPT)
+            # print(dialog.get_title())
+        except:
+            print(" +++++++++++++ no dialog")
+        return False
+    return True
+
 def do_change(n):
+    print("+++++++ do change")
     if n:
         message = _("Insert tool %d and click continue when ready") % n
     else:
@@ -46,27 +71,34 @@ def do_change(n):
     app.update()
     start_polling_hal_in_background()
 
-   
+    global dialog
     try:
         # todo
-        if 1:            
+        if 1:  
             dialog = Gtk.Dialog(_("Tool change"), Gtk.Window(), None)
             dialog.connect("delete-event", lambda w, d: w.run())
-            print(dialog.get_toplevel())
+            dialog.set_default_size(300, -1)            
             label = Gtk.Label.new(message)
+            label.set_line_wrap(True)
             button = Gtk.Button.new_with_mnemonic(_("_Continue"))
             button.set_size_request(-1, 60)
             button.connect("clicked",lambda w:dialog.response(Gtk.ResponseType.OK))
             box = Gtk.HButtonBox()
             box.add(button)
-            dialog.vbox.pack_start(label, True, True, 5)
+            dialog.vbox.pack_start(label, True, True, 0)
             dialog.vbox.pack_end(box, True, True, 0)
-            dialog.set_border_width(5)
+            # dialog.set_border_width(0)
             dialog.show_all()
+            timer_id = GObject.timeout_add(100, periodic)   
+
             r = dialog.run()
-            print ("r=", r)
-            dialog.destroy()
-            dialog.show_all()
+            print ("-->    r=", r)
+            GObject.source_remove(timer_id)
+            try:
+                dialog.destroy()
+                dialog.show_all()
+            except:
+                print("Error")
         else:
             r = app.tk.call("tk_dialog", ".tool_change",
                 _("Tool change"), message, "info", 0, _("Continue"))
@@ -92,14 +124,15 @@ h.ready()
 app = tkinter.Tk(className="AxisToolChanger")
 app.wm_geometry("-60-60")
 app.wm_title(_("AXIS Manual Toolchanger"))
-rs274.options.install(app)
-nf.start(app); nf.makecommand(app, "_", _)
+# rs274.options.install(app)
+# nf.start(app); nf.makecommand(app, "_", _)
 app.wm_protocol("WM_DELETE_WINDOW", app.wm_withdraw)
 lab = tkinter.Message(app, aspect=500, text = _("\
 This window is part of the AXIS manual toolchanger.  It is safe to close \
 or iconify this window, or it will close automatically after a few seconds."))
 lab.pack()
-app.after(10 * 1000, withdraw)
+app.after(5 * 1000, withdraw)
+
 
 try:
     while 1:
