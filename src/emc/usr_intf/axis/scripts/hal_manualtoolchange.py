@@ -7,7 +7,7 @@ import tkinter
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from gi.repository import GObject
+from gi.repository import GLib
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
@@ -52,9 +52,10 @@ def periodic():
 
     if (h.change_button):
         h.changed = True
-        print(" +++++++++++++ change button")
-        try:            
+        try:
+            print(" +++++++++++++ change button 1")
             dialog.response(Gtk.ResponseType.ACCEPT)
+            print(" +++++++++++++ change button 2")
             # print(dialog.get_title())
         except:
             print(" +++++++++++++ no dialog")
@@ -89,11 +90,12 @@ def do_change(n):
             dialog.vbox.pack_end(box, True, True, 0)
             # dialog.set_border_width(0)
             dialog.show_all()
-            timer_id = GObject.timeout_add(100, periodic)   
-
+            timer_id = GLib.timeout_add(100, periodic)
+            print("++++++ run start")
             r = dialog.run()
+            print("++++++ run end")
             print ("-->    r=", r)
-            GObject.source_remove(timer_id)
+            GLib.source_remove(timer_id)
             try:
                 dialog.destroy()
                 dialog.show_all()
