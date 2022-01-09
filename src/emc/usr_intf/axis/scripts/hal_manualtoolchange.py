@@ -55,6 +55,7 @@ def periodic():
         try:
             print(" +++++++++++++ change button 1")
             dialog.response(Gtk.ResponseType.ACCEPT)
+            dialog.show()
             print(" +++++++++++++ change button 2")
             # print(dialog.get_title())
         except:
@@ -76,7 +77,8 @@ def do_change(n):
     try:
         # todo
         if 1:  
-            dialog = Gtk.Dialog(_("Tool change"), Gtk.Window(), None)
+            win = Gtk.Window()
+            dialog = Gtk.Dialog(_("Tool change"), win, None)
             dialog.connect("delete-event", lambda w, d: w.run())
             dialog.set_default_size(300, -1)            
             label = Gtk.Label.new(message)
@@ -95,10 +97,12 @@ def do_change(n):
             r = dialog.run()
             print("++++++ run end")
             print ("-->    r=", r)
-            GLib.source_remove(timer_id)
+            GLib.source_remove(timer_id) # this or return False in cb
             try:
-                dialog.destroy()
-                dialog.show_all()
+                dialog.destroy()               
+                win.destroy() 
+                win.show_all()
+                
             except:
                 print("Error")
         else:
