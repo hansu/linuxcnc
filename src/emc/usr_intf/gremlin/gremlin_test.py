@@ -15,20 +15,12 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-# import gi
-# gi.require_version("Gtk","3.0")
-# from gi.repository import Gtk
-# from gi.repository import Gdk
-# from gi.repository import GObject
-# from gi.repository import GLib
+
 import sys
 import glnav
 import rs274.glcanon
-# import rs274.interpret
 import linuxcnc
 import gcode
-# import time
-# import re
 import tempfile
 import shutil
 import os
@@ -44,7 +36,7 @@ class StatCanon(rs274.glcanon.GLCanon, rs274.interpret.StatMixin):
         rs274.interpret.StatMixin.__init__(self, stat, random)
         self.progress = DummyProgress()
 
-class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
+class GCodeProperties(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
     def __init__(self, inifile):
         glnav.GlNavBase.__init__(self)
         def C(s):
@@ -58,6 +50,11 @@ class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
         self.lathe_option = bool(temp == "1" or temp == "True" or temp == "true" )
         self.metric_units = True
         self.gcode_properties = None
+        self.g0 = 0
+        self.g1 = 0
+        self.gt = 0
+        self.min_extents = [9e99,9e99,9e99]
+        self.max_extents = [-9e99,-9e99,-9e99]
 
     def get_gcode_properties(self): return self.gcode_properties
 
@@ -156,30 +153,29 @@ class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
 
             mf = max_speed
 
-            g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
-            g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
+            self.g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
+            self.g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
                 sum(dist(l[1][:3], l[2][:3]) for l in canon.arcfeed))
-            gt = (sum(dist(l[1][:3], l[2][:3])/min(mf, l[3]) for l in canon.feed) +
+            self.gt = (sum(dist(l[1][:3], l[2][:3])/min(mf, l[3]) for l in canon.feed) +
                 sum(dist(l[1][:3], l[2][:3])/min(mf, l[3])  for l in canon.arcfeed) +
                 sum(dist(l[1][:3], l[2][:3])/mf  for l in canon.traverse) +
                 canon.dwell_time
                 )
  
-            props['G0'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g0, conv), units)
-            props['G1'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g1, conv), units)
-            if gt > 120:
-                props['Run'] = "%.1f Minutes" % (gt/60)
+            props['G0'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(self.g0, conv), units)
+            props['G1'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(self.g1, conv), units)
+            if self.gt > 120:
+                props['Run'] = "%.1f Minutes" % (self.gt/60)
             else:
-                props['Run'] = "%d Seconds" % (int(gt))
+                props['Run'] = "%d Seconds" % (int(self.gt))
 
-            min_extents = from_internal_units(canon.min_extents, conv)
-            max_extents = from_internal_units(canon.max_extents, conv)
-            print("min extends:", min_extents)
-            print("max extends:", max_extents)
-            print("soft limits:",self.soft_limits())
+            self.min_extents = from_internal_units(canon.min_extents, conv)
+            self.max_extents = from_internal_units(canon.max_extents, conv)
+            # print("min extends:", min_extents)
+            # print("max extends:", max_extents)
             for (i, c) in enumerate("XYZ"):
-                a = min_extents[i]
-                b = max_extents[i]
+                a = self.min_extents[i]
+                b = self.max_extents[i]
                 if a != b:
                     props[c] = "%(a)f to %(b)f = %(diff)f %(units)s".replace("%f", fmt) % {'a': a, 'b': b, 'diff': b-a, 'units': units}
             props['Units'] = units
@@ -207,8 +203,19 @@ if __name__ == '__main__':
     # load("/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc")
     # print(canon.traverse)
 
+
     inifile = linuxcnc.ini("/home/cnc/linuxcnc/configs/Sieg-X1-dev/Sieg-X1.ini")
-    t = Test(inifile)
+    # inifile = linuxcnc.ini(os.getenv("INI_FILE_NAME"))
+    # inifile = linuxcnc.ini(os.environ['INI_FILE_NAME'],None)
+  
+    t = GCodeProperties(inifile)
     t.load() #"/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc")
-    print(t.get_gcode_properties())
+    props = t.get_gcode_properties()
+    print("size:", props.get('size'))
+    print("G0:", props.get('G0'))
+    print("G1:", props.get('G1'))
+    print("Time:", props.get('Run'))
+    print("min:", t.min_extents)
+    print("max:", t.max_extents)
+    print("zeit:", t.gt/60)
 
