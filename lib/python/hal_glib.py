@@ -924,6 +924,9 @@ class _GStat(GObject.GObject):
     def get_current_mode(self):
         return self.old['mode']
 
+    def get_geometry(self):
+        print("geometry")
+
     # linear - in machine units
     def set_jograte(self, upm):
         self.current_jog_rate = upm

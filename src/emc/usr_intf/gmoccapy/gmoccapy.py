@@ -4632,6 +4632,7 @@ class gmoccapy(object):
 
     def on_btn_delete_view_clicked(self, widget, data=None):
         self.widgets.gremlin.clear_live_plotter()
+        print(self.widgets.gremlin.get_gcode_properties())
 
     def on_tbtn_view_dimension_toggled(self, widget, data=None):
         self.widgets.gremlin.set_property("show_extents_option", widget.get_active())

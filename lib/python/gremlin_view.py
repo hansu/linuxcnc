@@ -564,3 +564,6 @@ Note: linuxcnc must be running on same machine
         usage()
 
 # vim: sts=4 sw=4 et
+
+if __name__ == '__main__':
+    standalone_gremlin_view()

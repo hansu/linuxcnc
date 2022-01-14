@@ -6,6 +6,8 @@ import math
 import warnings
 
 # Set up logging
+# python3 -m pip install qtpyvcp
+# pip install PyQt5==5.12.2 
 from qtvcp import logger
 LOG = logger.getLogger(__name__)
 
@@ -403,6 +405,8 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         return v*lu
 
     def calculate_gcode_properties(self, canon):
+        print("###### calculate_gcode_properties")
+
         def dist(xxx_todo_changeme, xxx_todo_changeme1):
             (x,y,z) = xxx_todo_changeme
             (p,q,r) = xxx_todo_changeme1
@@ -470,6 +474,8 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
 
             min_extents = from_internal_units(canon.min_extents, conv)
             max_extents = from_internal_units(canon.max_extents, conv)
+            print("min extends:", min_extents)
+            print("max extends:", max_extents)
             for (i, c) in enumerate("XYZ"):
                 a = min_extents[i]
                 b = max_extents[i]
@@ -1215,6 +1221,14 @@ if __name__ == '__main__':
         usage()
     window = Window(inifilename)
     window.show()
+   
+    # gr = Lcnc_3dGraphics()
+    # gr.load("/home/cnc/linuxcnc/nc_files/examples/3D_Chips.ngc")
+    # load("/home/cnc/linuxcnc/nc_files/examples/3D_Chips.ngc")
+
+     
+    # print("get_gcode_properties", gr.get_gcode_properties())
+    print("get_gcode_properties", window.glWidget.get_gcode_properties())
     sys.exit(app.exec_())
   
 

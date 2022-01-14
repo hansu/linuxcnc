@@ -2,7 +2,9 @@
 
 import sys
 import os
-import gtk
+import gi
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk as gtk
 
 import linuxcnc
 from gremlin import Gremlin

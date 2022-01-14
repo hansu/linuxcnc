@@ -198,6 +198,7 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
         self.use_commanded = True
         self.show_limits = True
         self.show_extents_option = True
+        self.gcode_properties = None
         self.show_live_plot = True
         self.show_velocity = True
         self.metric_units = True
@@ -342,7 +343,13 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
         self._current_file = filename
         try:
             random = int(self.inifile.find("EMCIO", "RANDOM_TOOLCHANGER") or 0)
-            canon = StatCanon(self.colors, self.get_geometry(),self.lathe_option, s, random)
+            # print("self.colors:", self.colors)
+            # print("self.get_geometry():", self.get_geometry())
+            # print("self.lathe_option:", self.lathe_option)
+            # print("s:", s)
+            # print("random:", random)
+            canon = StatCanon(rs274.glcanon.GlCanonDraw.colors, "XYZ",self.lathe_option, s, random)
+            # canon = StatCanon(self.colors, self.get_geometry(),self.lathe_option, s, random)
             parameter = self.inifile.find("RS274NGC", "PARAMETER_FILE")
             temp_parameter = os.path.join(td, os.path.basename(parameter or "linuxcnc.var"))
             if parameter:
@@ -354,11 +361,112 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
             result, seq = self.load_preview(filename, canon, unitcode, initcode)
             if result > gcode.MIN_ERROR:
                 self.report_gcode_error(result, seq, filename)
+            self.calculate_gcode_properties(canon)
 
         finally:
             shutil.rmtree(td)
 
         self.set_current_view()
+
+    def from_internal_linear_unit(self, v, unit=None):
+        if unit is None:
+            unit = self.stat.linear_units
+        lu = (unit or 1) * 25.4
+        return v*lu    
+
+    def calculate_gcode_properties(self, canon):
+        print("###### calculate_gcode_properties 2")
+
+        def dist(xxx_todo_changeme, xxx_todo_changeme1):
+            (x,y,z) = xxx_todo_changeme
+            (p,q,r) = xxx_todo_changeme1
+            return ((x-p)**2 + (y-q)**2 + (z-r)**2) ** .5
+        def from_internal_units(pos, unit=None):
+            if unit is None:
+                unit = self.stat.linear_units
+            lu = (unit or 1) * 25.4
+
+            lus = [lu, lu, lu, 1, 1, 1, lu, lu, lu]
+            return [a*b for a, b in zip(pos, lus)]
+
+        props = {}
+        loaded_file = self._current_file
+        max_speed = float(
+            self.inifile.find("DISPLAY","MAX_LINEAR_VELOCITY")
+            or self.inifile.find("TRAJ","MAX_LINEAR_VELOCITY")
+            or self.inifile.find("AXIS_X","MAX_VELOCITY")
+            or 1)
+
+        if not loaded_file:
+            props['name'] = "No file loaded"
+        else:
+            ext = os.path.splitext(loaded_file)[1]
+            program_filter = None
+            if ext:
+                program_filter = self.inifile.find("FILTER", ext[1:])
+            name = os.path.basename(loaded_file)
+            if program_filter:
+                props['name'] = "generated from %s" % name
+            else:
+                props['name'] = name
+
+            size = os.stat(loaded_file).st_size
+            lines = sum(1 for line in open(loaded_file))
+            props['size'] = "%(size)s bytes\n%(lines)s gcode lines" % {'size': size, 'lines': lines}
+
+            if self.metric_units:
+                conv = 1
+                units = "mm"
+                fmt = "%.3f"
+            else:
+                conv = 1/25.4
+                units = "in"
+                fmt = "%.4f"
+
+            mf = max_speed
+            #print canon.traverse[0]
+            print("canon.traverse):", canon.traverse)
+            g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
+            g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
+                sum(dist(l[1][:3], l[2][:3]) for l in canon.arcfeed))
+            gt = (sum(dist(l[1][:3], l[2][:3])/min(mf, l[3]) for l in canon.feed) +
+                sum(dist(l[1][:3], l[2][:3])/min(mf, l[3])  for l in canon.arcfeed) +
+                sum(dist(l[1][:3], l[2][:3])/mf  for l in canon.traverse) +
+                canon.dwell_time
+                )
+ 
+            props['G0'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g0, conv), units)
+            props['G1'] = "%f %s".replace("%f", fmt) % (self.from_internal_linear_unit(g1, conv), units)
+            if gt > 120:
+                props['Run'] = "%.1f Minutes" % (gt/60)
+            else:
+                props['Run'] = "%d Seconds" % (int(gt))
+
+            min_extents = from_internal_units(canon.min_extents, conv)
+            max_extents = from_internal_units(canon.max_extents, conv)
+            print("min extends:", min_extents)
+            print("max extends:", max_extents)
+            print("end")
+            for (i, c) in enumerate("XYZ"):
+                a = min_extents[i]
+                b = max_extents[i]
+                if a != b:
+                    props[c] = "%(a)f to %(b)f = %(diff)f %(units)s".replace("%f", fmt) % {'a': a, 'b': b, 'diff': b-a, 'units': units}
+            props['Units'] = units
+
+            if self.metric_units:
+                if 200 in canon.state.gcodes:
+                    gcode_units = "in"
+                else:
+                    gcode_units = "mm"
+            else:
+                if 210 in canon.state.gcodes:
+                    gcode_units = "mm"
+                else:
+                    gcode_units = "in"
+            props['GCode Units'] = gcode_units
+
+        self.gcode_properties = props
 
     def get_program_alpha(self): return self.program_alpha
     def get_num_joints(self): return self.num_joints
@@ -374,6 +482,7 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
     def get_joints_mode(self): return self.use_joints_mode
     def get_show_commanded(self): return self.use_commanded
     def get_show_extents(self): return self.show_extents_option
+    def get_gcode_properties(self): return self.gcode_properties
     def get_show_limits(self): return self.show_limits
     def get_show_live_plot(self): return self.show_live_plot
     def get_show_machine_speed(self): return self.show_velocity
@@ -572,3 +681,166 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
 
     def rotate_view(self,x,y):
         self.rotateOrTranslate(x, y)
+
+
+
+
+
+def load(self,filename = None):
+    s = linuxcnc.stat()
+    s.poll()
+    if not filename and s.file:
+        filename = s.file
+    elif not filename and not s.file:
+        return
+    
+    inifile = linuxcnc.ini("/home/cnc/linuxcnc/configs/Sieg-X1-dev/Sieg-X1.ini")
+
+    td = tempfile.mkdtemp()
+    # self._current_file = filename
+    try:
+        random = int(inifile.find("EMCIO", "RANDOM_TOOLCHANGER") or 0)
+     
+        # print("self.colors:", self.colors)
+        # print("self.get_geometry():", self.get_geometry())
+        # print("self.lathe_option:", self.lathe_option)
+        # print("s:", s)
+        # print("random:", random)
+        canon = StatCanon(rs274.glcanon.GlCanonDraw.colors, "XYZ", False, s, random)
+        # canon = StatCanon(self.colors, self.get_geometry(),self.lathe_option, s, random)
+        parameter = inifile.find("RS274NGC", "PARAMETER_FILE")
+        temp_parameter = os.path.join(td, os.path.basename(parameter or "linuxcnc.var"))
+        if parameter:
+            shutil.copy(parameter, temp_parameter)
+        canon.parameter_file = temp_parameter
+
+        unitcode = "G%d" % (20 + (s.linear_units == 1))
+        initcode = inifile.find("RS274NGC", "RS274NGC_STARTUP_CODE") or ""
+        # result, seq = self.load_preview(filename, canon, unitcode, initcode)
+        # if result > gcode.MIN_ERROR:
+        #     self.report_gcode_error(result, seq, filename)
+        calculate_gcode_properties(canon)
+
+    finally:
+        shutil.rmtree(td)
+
+    # self.set_current_view()
+
+def from_internal_linear_unit(v, unit=None):
+    if unit is None:
+        # unit = self.stat.linear_units
+        unit = linuxcnc.stat.linear_units
+    lu = (unit or 1) * 25.4
+    return v*lu    
+
+def calculate_gcode_properties(canon):
+    print("###### calculate_gcode_properties standalone")
+    inifile = linuxcnc.ini("/home/cnc/linuxcnc/configs/Sieg-X1-dev/Sieg-X1.ini")
+
+
+    def dist(xxx_todo_changeme, xxx_todo_changeme1):
+        (x,y,z) = xxx_todo_changeme
+        (p,q,r) = xxx_todo_changeme1
+        return ((x-p)**2 + (y-q)**2 + (z-r)**2) ** .5
+    def from_internal_units(pos, unit=None):
+        if unit is None:
+            # unit = self.stat.linear_units
+            unit = linuxcnc.stat.linear_units
+        lu = (unit or 1) * 25.4
+
+        lus = [lu, lu, lu, 1, 1, 1, lu, lu, lu]
+        return [a*b for a, b in zip(pos, lus)]
+
+    props = {}
+    loaded_file = "/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc"
+    max_speed = float(
+        inifile.find("DISPLAY","MAX_LINEAR_VELOCITY")
+        or inifile.find("TRAJ","MAX_LINEAR_VELOCITY")
+        or inifile.find("AXIS_X","MAX_VELOCITY")
+        or 1)
+
+    if not loaded_file:
+        props['name'] = "No file loaded"
+    else:
+        ext = os.path.splitext(loaded_file)[1]
+        program_filter = None
+        if ext:
+            program_filter = inifile.find("FILTER", ext[1:])
+        name = os.path.basename(loaded_file)
+        if program_filter:
+            props['name'] = "generated from %s" % name
+        else:
+            props['name'] = name
+
+        size = os.stat(loaded_file).st_size
+        lines = sum(1 for line in open(loaded_file))
+        props['size'] = "%(size)s bytes\n%(lines)s gcode lines" % {'size': size, 'lines': lines}
+
+        # if self.metric_units:
+        if 1:
+            conv = 1
+            units = "mm"
+            fmt = "%.3f"
+        else:
+            conv = 1/25.4
+            units = "in"
+            fmt = "%.4f"
+
+        mf = max_speed
+        #print canon.traverse[0]
+        print("canon.traverse):", canon.traverse)
+        g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
+        g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
+            sum(dist(l[1][:3], l[2][:3]) for l in canon.arcfeed))
+        gt = (sum(dist(l[1][:3], l[2][:3])/min(mf, l[3]) for l in canon.feed) +
+            sum(dist(l[1][:3], l[2][:3])/min(mf, l[3])  for l in canon.arcfeed) +
+            sum(dist(l[1][:3], l[2][:3])/mf  for l in canon.traverse) +
+            canon.dwell_time
+            )
+
+        props['G0'] = "%f %s".replace("%f", fmt) % (from_internal_linear_unit(g0, conv), units)
+        props['G1'] = "%f %s".replace("%f", fmt) % (from_internal_linear_unit(g1, conv), units)
+        if gt > 120:
+            props['Run'] = "%.1f Minutes" % (gt/60)
+        else:
+            props['Run'] = "%d Seconds" % (int(gt))
+
+        min_extents = from_internal_units(canon.min_extents, conv)
+        max_extents = from_internal_units(canon.max_extents, conv)
+        print("min extends:", min_extents)
+        print("max extends:", max_extents)
+        print("end")
+        for (i, c) in enumerate("XYZ"):
+            a = min_extents[i]
+            b = max_extents[i]
+            if a != b:
+                props[c] = "%(a)f to %(b)f = %(diff)f %(units)s".replace("%f", fmt) % {'a': a, 'b': b, 'diff': b-a, 'units': units}
+        props['Units'] = units
+
+        # # if self.metric_units:
+        # if 1:
+        #     if 200 in canon.state.gcodes:
+        #         gcode_units = "in"
+        #     else:
+        #         gcode_units = "mm"
+        # else:
+        #     if 210 in canon.state.gcodes:
+        #         gcode_units = "mm"
+        #     else:
+        #         gcode_units = "in"
+        gcode_units = "mm"
+
+        props['GCode Units'] = gcode_units
+
+    # self.gcode_properties = propsx
+    print(props)
+
+if __name__ == '__main__':
+
+    s = linuxcnc.stat()
+    s.poll()
+    # canon = StatCanon(self.colors, self.get_geometry(),self.lathe_option, s, random)
+    canon = StatCanon(rs274.glcanon.GlCanonDraw.colors, "XYZ", False, s, 0)
+
+    load("/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc")
+    print(canon.traverse)
