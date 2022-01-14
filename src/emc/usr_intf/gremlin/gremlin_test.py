@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-#    Copyright (C) 2009-2012
-#    Jeff Epler <jepler@unpythonic.net>,
-#    Pavel Shramov <psha@kamba.psha.org.ru>,
-#    Chris Morley <chrisinnanaimo@hotmail.com>
-#
+
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -17,44 +13,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-#    2014 Steffen Noack
-#    add property 'mouse_btn_mode'
-#    0 = default: left rotate, middle move,   right zoom
-#    1 =          left zoom,   middle move,   right rotate
-#    2 =          left move,   middle rotate, right zoom
-#    3 =          left zoom,   middle rotate, right move
-#    4 =          left move,   middle zoom,   right rotate
-#    5 =          left rotate, middle zoom,   right move
-#
-#    2015 Moses McKnight introduced mode 6 
-#    6 = left move, middle zoom, right zoom (no rotate - for 2D plasma machines or lathes)
-#
-#    2016 Norbert Schechner
-#    corrected mode handling for lathes, as in most modes it was not possible to move, as 
-#    it has only been allowed in p view.
 
 
-import gi
-gi.require_version("Gtk","3.0")
-from gi.repository import Gtk
-from gi.repository import Gdk
-from gi.repository import GObject
-from gi.repository import GLib
-
+# import gi
+# gi.require_version("Gtk","3.0")
+# from gi.repository import Gtk
+# from gi.repository import Gdk
+# from gi.repository import GObject
+# from gi.repository import GLib
 import sys
 import glnav
 import rs274.glcanon
-import rs274.interpret
+# import rs274.interpret
 import linuxcnc
 import gcode
-import time
-import re
+# import time
+# import re
 import tempfile
 import shutil
 import os
 
-import _thread
 
 class DummyProgress:
     def nextphase(self, unused): pass
@@ -74,17 +52,8 @@ class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
             s = self.colors[s]
             return [int(x * 255) for x in s + (a,)]
         self.inifile = inifile
-        self.logger = linuxcnc.positionlogger(linuxcnc.stat(),
-            C('backplotjog'),
-            C('backplottraverse'),
-            C('backplotfeed'),
-            C('backplotarc'),
-            C('backplottoolchange'),
-            C('backplotprobing'),
-            self.get_geometry()
-        )
-        _thread.start_new_thread(self.logger.start, (.01,))
-        rs274.glcanon.GlCanonDraw.__init__(self, linuxcnc.stat(), self.logger)
+
+        rs274.glcanon.GlCanonDraw.__init__(self, linuxcnc.stat(), None)
         temp = inifile.find("DISPLAY", "LATHE")
         self.lathe_option = bool(temp == "1" or temp == "True" or temp == "true" )
         self.metric_units = True
@@ -186,8 +155,7 @@ class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
                 fmt = "%.4f"
 
             mf = max_speed
-            #print canon.traverse[0]
-            # print("canon.traverse):", canon.traverse)
+
             g0 = sum(dist(l[1][:3], l[2][:3]) for l in canon.traverse)
             g1 = (sum(dist(l[1][:3], l[2][:3]) for l in canon.feed) +
                 sum(dist(l[1][:3], l[2][:3]) for l in canon.arcfeed))
@@ -208,7 +176,7 @@ class Test(rs274.glcanon.GlCanonDraw, glnav.GlNavBase):
             max_extents = from_internal_units(canon.max_extents, conv)
             print("min extends:", min_extents)
             print("max extends:", max_extents)
-            print("end")
+            print("soft limits:",self.soft_limits())
             for (i, c) in enumerate("XYZ"):
                 a = min_extents[i]
                 b = max_extents[i]
