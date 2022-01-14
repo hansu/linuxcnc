@@ -209,6 +209,6 @@ if __name__ == '__main__':
 
     inifile = linuxcnc.ini("/home/cnc/linuxcnc/configs/Sieg-X1-dev/Sieg-X1.ini")
     t = Test(inifile)
-    t.load("/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc")
+    t.load() #"/home/cnc/linuxcnc/nc_files/examples/3dtest.ngc")
     print(t.get_gcode_properties())
 
