@@ -640,6 +640,9 @@ class gmoccapy(object):
         print("**** GMOCCAPY INFO ****")
         print("**** Entering make ref axis button")
 
+        # default button size
+        default_size=(85, 56)
+
         # check if we need axis or joint homing button
         if self.trivial_kinematics:
             # lets find out, how many axis we got
@@ -658,11 +661,12 @@ class gmoccapy(object):
         if num_elements < 7:
             lbl = self._get_space_label("lbl_space_0")
             self.widgets.hbtb_ref.pack_start(lbl,True,True,0)
-    
-        file = "ref_all.png"
-        filepath = os.path.join(IMAGEDIR, file)
-        print("Filepath = ", filepath)
-        btn = self._get_button_with_image("ref_all", filepath, None)
+
+        btn = self._new_button_with_predefined_image(
+            name="ref_all",
+            size=default_size,
+            image=self.widgets.img_ref_all
+        )
         btn.set_property("tooltip-text", _("Press to home all {0}".format(name_prefix)))
         btn.connect("clicked", self._on_btn_home_clicked)
         # we use pack_start, so the widgets will be moved from right to left
@@ -671,7 +675,11 @@ class gmoccapy(object):
 
         if num_elements > 7:
             # show the previous arrow to switch visible homing button)
-            btn = self._get_button_with_image("previous_button", None, Gtk.STOCK_GO_BACK)
+            btn = self._new_button_with_predefined_image(
+                name="previous_button",
+                size=default_size,
+                image=self.widgets.img_ref_paginate_prev
+            )
             btn.set_property("tooltip-text", _("Press to display previous homing button"))
             btn.connect("clicked", self._on_btn_previous_clicked)
             self.widgets.hbtb_ref.pack_start(btn,True,True,0)
@@ -683,13 +691,11 @@ class gmoccapy(object):
             self.widgets.hbtb_ref.pack_start(lbl,True,True,0)
 
         for pos, elem in enumerate(dic):
-
-            file = "ref_{0}.png".format(elem)
-            filepath = os.path.join(IMAGEDIR, file)
-            print("Filepath = ", filepath)
-
-            name = "home_{0}_{1}".format(name_prefix, elem)
-            btn = self._get_button_with_image(name, filepath, None)
+            btn = self._new_button_with_predefined_image(
+                name=f"home_{name_prefix}_{elem}",
+                size=default_size,
+                image_name=f"img_ref_{elem}"
+            )
             btn.set_property("tooltip-text", _("Press to home {0} {1}".format(name_prefix, elem)))
             btn.connect("clicked", self._on_btn_home_clicked)
 
@@ -702,7 +708,11 @@ class gmoccapy(object):
 
         if num_elements > 7:
             # show the next arrow to switch visible homing button)
-            btn = self._get_button_with_image("next_button", None, Gtk.STOCK_GO_FORWARD)
+            btn = self._new_button_with_predefined_image(
+                name="next_button",
+                size=default_size,
+                image=self.widgets.img_ref_paginate_next
+            )
             btn.set_property("tooltip-text", _("Press to display next homing button"))
             btn.connect("clicked", self._on_btn_next_clicked)
             self.widgets.hbtb_ref.pack_start(btn,True,True,0)
@@ -713,17 +723,20 @@ class gmoccapy(object):
             lbl = self._get_space_label("lbl_space_{0}".format(count))
             self.widgets.hbtb_ref.pack_start(lbl,True,True,0)
  
-        file = "unhome.png"
-        filepath = os.path.join(IMAGEDIR, file)
-        print("Filepath = ", filepath)
-        name = "unref_all"
-        btn = self._get_button_with_image(name, filepath, None)
+        btn = self._new_button_with_predefined_image(
+            name="unref_all",
+            size=default_size,
+            image=self.widgets.img_unref_all
+        )
         btn.set_property("tooltip-text", _("Press to unhome all {0}".format(name_prefix)))
         btn.connect("clicked", self._on_btn_unhome_clicked)
         self.widgets.hbtb_ref.pack_start(btn,True,True,0)
-        
-        name = "home_back"
-        btn = self._get_button_with_image(name, None, Gtk.STOCK_UNDO)
+
+        btn = self._new_button_with_predefined_image(
+            name="home_back",
+            size=default_size,
+            image=self.widgets.img_ref_menu_close
+        )
         btn.set_property("tooltip-text", _("Press to return to main button list"))
         btn.connect("clicked", self._on_btn_home_back_clicked)
         self.widgets.hbtb_ref.pack_start(btn,True,True,0)
@@ -741,6 +754,25 @@ class gmoccapy(object):
         lbl.set_size_request(85,56)
         lbl.show()
         return lbl
+
+    def _new_button_with_predefined_image(self, name, size, image = None, image_name = None):
+        btn = Gtk.Button()
+        btn.set_size_request(size[0], size[1])
+        btn.set_property("name", name)
+        try:
+            if image:
+                btn.set_image(image)
+            elif image_name:
+                btn.set_image(self.widgets[image_name])
+            else:
+                raise ValueError("Either image or image_name must not be None")
+        except Exception as e:
+            print(f"Error creating button with predefined image: {e}")
+            missing_image = Gtk.Image()
+            # TODO: Deprecated
+            missing_image.set_from_stock(Gtk.STOCK_MISSING_IMAGE, Gtk.IconSize.BUTTON)
+            btn.set_image(missing_image)
+        return btn
 
     def _get_button_with_image(self, name, filepath, stock):
         print("get button with image")
@@ -4319,8 +4351,51 @@ class gmoccapy(object):
                 ("img_fullsize_preview1_open",  "fullscreen_open",  32),
                 ("img_fullsize_preview1_close", "fullscreen_close", 32),
                 # ref
-                ("img_ref_all", "ref_all", 48),
-                # ("", "ref_", 48)
+                ("img_ref_menu",            "ref_all",          48),
+                ("img_ref_menu_close",      "back_to_app",      32),
+                ("img_ref_paginate_next",   "chevron_right",    32),
+                ("img_ref_paginate_prev",   "chevron_left",     32),
+                ("img_ref_all",             "ref_all",          48),
+                ("img_unref_all",           "unref_all",        32),
+                ("img_ref_x", "ref_x", 48),
+                ("img_ref_y", "ref_y", 48),
+                ("img_ref_z", "ref_z", 48),
+                ("img_ref_a", "ref_a", 48),
+                ("img_ref_b", "ref_b", 48),
+                ("img_ref_c", "ref_c", 48),
+                ("img_ref_u", "ref_u", 48),
+                ("img_ref_v", "ref_v", 48),
+                ("img_ref_w", "ref_w", 48),
+                ("img_ref_0", "ref_0", 48),
+                ("img_ref_1", "ref_1", 48),
+                ("img_ref_2", "ref_2", 48),
+                ("img_ref_3", "ref_3", 48),
+                ("img_ref_4", "ref_4", 48),
+                ("img_ref_5", "ref_5", 48),
+                ("img_ref_6", "ref_6", 48),
+                ("img_ref_7", "ref_7", 48),
+                # touch off
+                #("img_touch_off", "TODO", 32),
+                # auto mode buttons
+                ("img_open",            "open_file",        32),
+                ("img_reload1",         "refresh",          32),
+                ("img_run",             "play",             32),
+                ("img_stop",            "stop",             32),
+                ("img_pause",           "pause",            32),
+                ("img_pause_active",    "pause_active",     32),
+                ("img_step",            "step",             32),
+                ("img_run_from",        "run_from_line",    32),
+                ("img_editor",          "edit_code",        32),
+                ("img_skip_optional_active",    "skip_optional_active",     32),
+                ("img_skip_optional_inactive",  "skip_optional_inactive",   32),
+                # load file buttons
+                ("img_home",            "home_folder",          32),
+                ("img_dir_up",          "chevron_up",           32),
+                ("img_sel_prev",        "chevron_left",         32),
+                ("img_sel_next",        "chevron_right",        32),
+                ("img_jump_to",         "user_defined_folder",  32),
+                ("img_select",          "open_file",            32),
+                ("img_back_file_load",  "back_to_app",          32),
                 # misc
                 ("img_close", "logout", 32),
             ]
@@ -5017,6 +5092,7 @@ class gmoccapy(object):
         self.command.set_block_delete(opt_blocks)
         self.prefs.putpref("blockdel", opt_blocks)
         self.widgets.hal_action_reload.emit("activate")
+        widget.set_image(self.widgets["img_skip_optional_" + ("active" if opt_blocks else "inactive")])
 
     #def on_tbtn_optional_stops_toggled(self, widget, data=None):
     #    opt_stops = widget.get_active()
@@ -5028,6 +5104,7 @@ class gmoccapy(object):
     def on_tbtn_pause_toggled(self, widget, data=None):
         widgetlist = ["rbt_forward", "rbt_reverse", "rbt_stop", "ntb_jog"]
         self._sensitize_widgets(widgetlist, widget.get_active())
+        widget.set_image(self.widgets["img_pause_active" if widget.get_active() else "img_pause"])
 
     def on_btn_stop_clicked(self, widget, data=None):
         self.command.abort()
