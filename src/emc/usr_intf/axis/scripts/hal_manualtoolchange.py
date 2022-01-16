@@ -14,7 +14,7 @@ gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
 _after = None
 def poll_hal_in_background():
-    print("poll hal in background")
+    # print("poll hal in background")
     global _after
     _after = None
     if not h.change:
@@ -40,31 +40,19 @@ def stop_polling_hal_in_background():
     _after = None
 
 def periodic():
-    print("periodic")
+    # print("periodic")
     global dialog
     if not h.change:
-        try:            
-            dialog.response(Gtk.ResponseType.ACCEPT)
-            # print(dialog.get_title())
-        except:
-            print(" +++++++++++++ no dialog")
+        dialog.response(Gtk.ResponseType.ACCEPT)
         return False
 
     if (h.change_button):
         h.changed = True
-        try:
-            print(" +++++++++++++ change button 1")
-            dialog.response(Gtk.ResponseType.ACCEPT)
-            dialog.show()
-            print(" +++++++++++++ change button 2")
-            # print(dialog.get_title())
-        except:
-            print(" +++++++++++++ no dialog")
+        dialog.response(Gtk.ResponseType.ACCEPT)
         return False
     return True
 
 def do_change(n):
-    print("+++++++ do change")
     if n:
         message = _("Insert tool %d and click continue when ready") % n
     else:
@@ -75,8 +63,7 @@ def do_change(n):
 
     global dialog
     try:
-        # todo
-        if 1:  
+        if display in ["gmoccapy", "gscreen", "touchy"]:  #- qtvcp, qtvcp woodpecker? 
             win = Gtk.Window()
             dialog = Gtk.Dialog(_("Tool change"), win, None)
             dialog.connect("delete-event", lambda w, d: w.run())
@@ -93,26 +80,24 @@ def do_change(n):
             # dialog.set_border_width(0)
             dialog.show_all()
             timer_id = GLib.timeout_add(100, periodic)
-            print("++++++ run start")
             r = dialog.run()
-            print("++++++ run end")
-            print ("-->    r=", r)
-            GLib.source_remove(timer_id) # this or return False in cb
-            try:
-                dialog.destroy()               
-                win.destroy() 
-                win.show_all()
-                
-            except:
-                print("Error")
+            if r == Gtk.ResponseType.OK:
+                r = 0
+            else:
+                r = -1
+            # GLib.source_remove(timer_id) # this or return False in cb
+            dialog.destroy()               
+            win.destroy() 
+            win.show_all()
+
         else:
+            # with nf_dialog following error: _tkinter.TclError: bad screen distance ".25"
             r = app.tk.call("tk_dialog", ".tool_change",
                 _("Tool change"), message, "info", 0, _("Continue"))
     finally:
         stop_polling_hal_in_background()
     if isinstance(r, str): r = int(r)
-    # todo:
-    if r == 0 or r == Gtk.ResponseType.OK:
+    if r == 0:
         h.changed = True
     app.update()
 
@@ -127,17 +112,21 @@ h.newpin("change_button", hal.HAL_BIT, hal.HAL_IN)
 h.newpin("changed", hal.HAL_BIT, hal.HAL_OUT)
 h.ready()
 
+inifile = linuxcnc.ini(os.environ.get('INI_FILE_NAME', '/dev/null'))
+display = inifile.find("DISPLAY","DISPLAY")
+print("Manualtoolchanger is loaded from", display)
+
 app = tkinter.Tk(className="AxisToolChanger")
 app.wm_geometry("-60-60")
 app.wm_title(_("AXIS Manual Toolchanger"))
-# rs274.options.install(app)
+rs274.options.install(app)
 # nf.start(app); nf.makecommand(app, "_", _)
 app.wm_protocol("WM_DELETE_WINDOW", app.wm_withdraw)
 lab = tkinter.Message(app, aspect=500, text = _("\
 This window is part of the AXIS manual toolchanger.  It is safe to close \
 or iconify this window, or it will close automatically after a few seconds."))
 lab.pack()
-app.after(5 * 1000, withdraw)
+app.after(10 * 1000, withdraw)
 
 
 try:
