@@ -100,6 +100,9 @@ _BB_TOOL = 7
 _BB_LOAD_FILE = 8
 #_BB_HOME_JOINTS will not be used, we will reorder the notebooks to get the correct page shown
 
+# Default button size for bottom buttons
+_DEFAULT_BB_SIZE = (85, 56)
+
 _TEMPDIR = tempfile.gettempdir()  # Now we know where the tempdir is, usualy /tmp
 
 # set up paths to files
@@ -640,9 +643,6 @@ class gmoccapy(object):
         print("**** GMOCCAPY INFO ****")
         print("**** Entering make ref axis button")
 
-        # default button size
-        default_size=(85, 56)
-
         # check if we need axis or joint homing button
         if self.trivial_kinematics:
             # lets find out, how many axis we got
@@ -664,7 +664,7 @@ class gmoccapy(object):
 
         btn = self._new_button_with_predefined_image(
             name="ref_all",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_ref_all
         )
         btn.set_property("tooltip-text", _("Press to home all {0}".format(name_prefix)))
@@ -677,7 +677,7 @@ class gmoccapy(object):
             # show the previous arrow to switch visible homing button)
             btn = self._new_button_with_predefined_image(
                 name="previous_button",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image=self.widgets.img_ref_paginate_prev
             )
             btn.set_property("tooltip-text", _("Press to display previous homing button"))
@@ -693,7 +693,7 @@ class gmoccapy(object):
         for pos, elem in enumerate(dic):
             btn = self._new_button_with_predefined_image(
                 name=f"home_{name_prefix}_{elem}",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image_name=f"img_ref_{elem}"
             )
             btn.set_property("tooltip-text", _("Press to home {0} {1}".format(name_prefix, elem)))
@@ -710,7 +710,7 @@ class gmoccapy(object):
             # show the next arrow to switch visible homing button)
             btn = self._new_button_with_predefined_image(
                 name="next_button",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image=self.widgets.img_ref_paginate_next
             )
             btn.set_property("tooltip-text", _("Press to display next homing button"))
@@ -725,7 +725,7 @@ class gmoccapy(object):
  
         btn = self._new_button_with_predefined_image(
             name="unref_all",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_unref_all
         )
         btn.set_property("tooltip-text", _("Press to unhome all {0}".format(name_prefix)))
@@ -734,7 +734,7 @@ class gmoccapy(object):
 
         btn = self._new_button_with_predefined_image(
             name="home_back",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_ref_menu_close
         )
         btn.set_property("tooltip-text", _("Press to return to main button list"))
@@ -751,13 +751,13 @@ class gmoccapy(object):
     def _get_space_label(self, name):
         lbl = Gtk.Label("")
         lbl.set_property("name", name)
-        lbl.set_size_request(85,56)
+        lbl.set_size_request(*_DEFAULT_BB_SIZE)
         lbl.show()
         return lbl
 
     def _new_button_with_predefined_image(self, name, size, image = None, image_name = None):
         btn = Gtk.Button()
-        btn.set_size_request(size[0], size[1])
+        btn.set_size_request(*size)
         btn.set_property("name", name)
         try:
             if image:
@@ -780,7 +780,7 @@ class gmoccapy(object):
         image = Gtk.Image()
         image.set_size_request(72,48)
         btn = Gtk.Button()
-        btn.set_size_request(85,56)
+        btn.set_size_request(*_DEFAULT_BB_SIZE)
         btn.set_property("name", name)
         try:
             if filepath:
@@ -940,9 +940,6 @@ class gmoccapy(object):
         print("**** GMOCCAPY INFO ****")
         print("**** Entering make touch button")
 
-        # default button size
-        default_size = (85, 56)
-
         dic = self.axis_list
         num_elements = len(dic)
         end = 7
@@ -963,7 +960,7 @@ class gmoccapy(object):
             # show the previous arrow to switch visible touch button)
             btn = self._new_button_with_predefined_image(
                 name="previous_button",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image=self.widgets.img_touch_paginate_prev
             )
             btn.set_property("tooltip-text", _("Press to display previous homing button"))
@@ -975,7 +972,7 @@ class gmoccapy(object):
         for pos, axis in enumerate(dic):
             btn = self._new_button_with_predefined_image(
                 name=f"touch_{axis}",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image_name=f"img_touch_{axis}"
             )
             btn.set_property("tooltip-text", _("Press to set touch off value for axis {0}".format(axis.upper())))
@@ -992,7 +989,7 @@ class gmoccapy(object):
             # show the next arrow to switch visible homing button)
             btn = self._new_button_with_predefined_image(
                 name="next_button",
-                size=default_size,
+                size=_DEFAULT_BB_SIZE,
                 image=self.widgets.img_touch_paginate_next
             )
             btn.set_property("tooltip-text", _("Press to display next homing button"))
@@ -1032,7 +1029,7 @@ class gmoccapy(object):
 
         btn = self._new_button_with_predefined_image(
             name="touch_back",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_touch_menu_close
         )
         btn.set_property("tooltip-text", _("Press to return to main button list"))
@@ -1270,8 +1267,6 @@ class gmoccapy(object):
         print("**** GMOCCAPY INFO ****")
         print("**** Entering make macro button")
 
-        default_size = (85, 56)
-
         macros = self.get_ini_info.get_macros()
 
         # if no macros at all are found, we receive a NONE, so we have to check:
@@ -1292,7 +1287,7 @@ class gmoccapy(object):
 
         btn = self._new_button_with_predefined_image(
             name="previous_button",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_macro_paginate_prev
         )
         btn.hide()
@@ -1323,7 +1318,7 @@ class gmoccapy(object):
 
         btn = self._new_button_with_predefined_image(
             name="next_button",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_macro_paginate_next
         )
         btn.set_property("tooltip-text", _("Press to display next macro button"))
@@ -1343,7 +1338,7 @@ class gmoccapy(object):
 
         btn = self.widgets.btn_macro_menu_toggle_keyboard = self._new_button_with_predefined_image(
             name="keyboard",
-            size=default_size,
+            size=_DEFAULT_BB_SIZE,
             image=self.widgets.img_macro_menu_keyboard
         )
         btn.set_property("tooltip-text", _("Press to display the virtual keyboard"))
