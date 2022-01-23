@@ -9,6 +9,7 @@ import argparse
 BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
+# Parsing arguments whether to use Tk or Gtk
 parser = argparse.ArgumentParser(description='HAL Manual toolchanger')
 parser.add_argument('--gui', type=str, metavar='DISPLAY',  
                     help='User interface corresponding to [DISPLAY] value in inifile (axis, gmoccapy, gscreen ...)',
@@ -91,19 +92,16 @@ def do_change(n):
     try:
         if use_gtk:
             win = Gtk.Window()
-            dialog = Gtk.Dialog(_("Tool change"), win, None)
-            dialog.connect("delete-event", lambda w, d: w.run())
-            dialog.set_default_size(300, -1)            
-            label = Gtk.Label.new(message)
-            label.set_line_wrap(True)
-            button = Gtk.Button.new_with_mnemonic(_("_Continue"))
-            button.set_size_request(-1, 56)
-            button.connect("clicked",lambda w:dialog.response(Gtk.ResponseType.OK))
+            dialog = Gtk.MessageDialog(win, Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                                Gtk.MessageType.INFO, Gtk.ButtonsType.NONE, message)
+            dialog.set_title(_("Tool change"))
+            ok_button = Gtk.Button.new_with_mnemonic("_Ok")
+            ok_button.set_size_request(-1, 56)
+            ok_button.connect("clicked",lambda w:dialog.response(Gtk.ResponseType.OK))
             box = Gtk.HButtonBox()
-            box.add(button)
-            dialog.vbox.pack_start(label, True, True, 0)
-            dialog.vbox.pack_end(box, True, True, 0)
-            dialog.set_border_width(0)
+            box.add(ok_button)
+            dialog.action_area.add(box)
+            dialog.set_border_width(5)
             dialog.show_all()
             timer_id = GLib.timeout_add(100, periodic)
             r = dialog.run()
