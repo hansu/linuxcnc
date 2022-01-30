@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # vim: sts=4 sw=4 et
 #    This is a component of EMC
 #    gladevcp Copyright 2010 Chris Morley
@@ -33,7 +33,6 @@
     -g option allows setting of the initial position of the panel
 """
 
-from __future__ import print_function
 import sys, os, subprocess
 import traceback
 import warnings
@@ -227,7 +226,7 @@ def main():
     # it also forwards events to qtvcp
     if opts.push_XID:
         if not opts.debug:
-            # supress warnings when x window closes
+            # suppress warnings when x window closes
             warnings.filterwarnings("ignore")
         # block X errors since Gdk error handling silently exits the
         # program without even the atexit handler given a chance
@@ -241,7 +240,7 @@ def main():
     # it also forwards keyboard events from gladevcp to AXIS
     if opts.parent:
         if not opts.debug:
-            # supress warnings when x window closes
+            # suppress warnings when x window closes
             warnings.filterwarnings("ignore")
         # block X errors since Gdk error handling silently exits the
         # program without even the atexit handler given a chance
@@ -286,7 +285,7 @@ def main():
 
     if opts.theme:
         dbg("**** GLADE VCP INFO:    Switching %s to '%s' theme" %(opts.component,opts.theme))
-        settings = Gtk.settings_get_default()
+        settings = Gtk.Settings.get_default()
         settings.set_string_property("gtk-theme-name", opts.theme, "")
 
     # This needs to be done after geometry moves so on dual screens the window maxumizes to the actual used screen size.
