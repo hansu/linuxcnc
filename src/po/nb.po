@@ -6,9 +6,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: emc-developers@lists.sourceforge.net\n"
 "POT-Creation-Date: 2022-01-26 19:05+0100\n"
-"PO-Revision-Date: 2022-01-22 07:55+0000\n"
+"PO-Revision-Date: 2022-02-20 00:43+0000\n"
 "Last-Translator: Petter Reinholdtsen <pere-weblate@hungry.com>\n"
 "Language-Team: Norwegian Bokmål <https://hosted.weblate.org/projects/"
 "linuxcnc/linuxcnc/nb_NO/>\n"
@@ -11192,7 +11192,9 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/dialogs.glade:2097
 #: src/emc/usr_intf/pncconf/dialogs.glade:2399
 #: src/emc/usr_intf/pncconf/dialogs.glade:2486
-msgid "_:"
+msgid ""
+"_:"
+""
 msgstr ""
 
 #: src/emc/usr_intf/stepconf/axisx.glade:249
@@ -13254,7 +13256,7 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/private_data.py:487
 #: src/emc/usr_intf/pncconf/private_data.py:503
 msgid "Main Axis"
-msgstr ""
+msgstr "Hovedakse"
 
 #: src/emc/usr_intf/pncconf/private_data.py:458
 #: src/emc/usr_intf/pncconf/private_data.py:459
@@ -13263,7 +13265,7 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/private_data.py:487
 #: src/emc/usr_intf/pncconf/private_data.py:503
 msgid "Tandem Axis"
-msgstr ""
+msgstr "Tandemakse"
 
 #: src/emc/usr_intf/pncconf/private_data.py:461
 msgid "Arc OK"
@@ -13296,16 +13298,16 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/private_data.py:466
 #: src/emc/usr_intf/pncconf/private_data.py:530
 msgid "Digital"
-msgstr ""
+msgstr "Digital"
 
 #: src/emc/usr_intf/pncconf/private_data.py:466
 #: src/emc/usr_intf/pncconf/private_data.py:913
 msgid "Axis Selection"
-msgstr ""
+msgstr "Aksevalg"
 
 #: src/emc/usr_intf/pncconf/private_data.py:466
 msgid "Overrides"
-msgstr ""
+msgstr "Overstyringer"
 
 #: src/emc/usr_intf/pncconf/private_data.py:467
 msgid "Operation"
@@ -13313,7 +13315,7 @@ msgstr ""
 
 #: src/emc/usr_intf/pncconf/private_data.py:467
 msgid "External Control"
-msgstr ""
+msgstr "Ekstern styring"
 
 #: src/emc/usr_intf/pncconf/private_data.py:468
 msgid "Axis rapid"
@@ -13346,7 +13348,7 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/private_data.py:471
 #: src/emc/usr_intf/pncconf/private_data.py:533
 msgid "Plasma"
-msgstr ""
+msgstr "Plasma"
 
 #: src/emc/usr_intf/pncconf/private_data.py:471
 #: src/emc/usr_intf/pncconf/private_data.py:480
@@ -16254,7 +16256,7 @@ msgstr ""
 
 #: src/emc/usr_intf/pncconf/thcad.glade:152
 msgid "0V Frequency (kHz)"
-msgstr ""
+msgstr "0V-frekvens (kHz)"
 
 #: src/emc/usr_intf/pncconf/thcad.glade:256
 msgid "Encoder"
@@ -16265,28 +16267,28 @@ msgstr ""
 #: src/emc/usr_intf/pncconf/z_axis.glade:16
 #: src/emc/usr_intf/pncconf/a_axis.glade:16
 msgid "Type 1"
-msgstr ""
+msgstr "Type 1"
 
 #: src/emc/usr_intf/pncconf/x_axis.glade:19
 #: src/emc/usr_intf/pncconf/y_axis.glade:19
 #: src/emc/usr_intf/pncconf/z_axis.glade:19
 #: src/emc/usr_intf/pncconf/a_axis.glade:19
 msgid "Type 2"
-msgstr ""
+msgstr "Type 2"
 
 #: src/emc/usr_intf/pncconf/x_axis.glade:58
 #: src/emc/usr_intf/pncconf/y_axis.glade:58
 #: src/emc/usr_intf/pncconf/z_axis.glade:58
 #: src/emc/usr_intf/pncconf/a_axis.glade:58
 msgid "Towards Negative Limit"
-msgstr ""
+msgstr "Mot negativ grense"
 
 #: src/emc/usr_intf/pncconf/x_axis.glade:61
 #: src/emc/usr_intf/pncconf/y_axis.glade:61
 #: src/emc/usr_intf/pncconf/z_axis.glade:61
 #: src/emc/usr_intf/pncconf/a_axis.glade:61
 msgid "Towards Positive Limit"
-msgstr ""
+msgstr "Mot positiv grense"
 
 #: src/emc/usr_intf/pncconf/x_axis.glade:152
 #: src/emc/usr_intf/pncconf/y_axis.glade:152
@@ -17868,20 +17870,20 @@ msgstr ""
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2499
 msgid "Override Entry"
-msgstr ""
+msgstr "Overstyr oppføring"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2543
 msgid "Machine powered on"
-msgstr ""
+msgstr "Maskinen er påslått"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2548
 msgid "Machine Estopped!"
-msgstr ""
+msgstr "Maskinen er avslått!"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2554
 #: lib/python/gladevcp/calculator.glade:33
 msgid "Calculator"
-msgstr ""
+msgstr "Regnemaskin"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2785
 #, python-format
@@ -17900,25 +17902,25 @@ msgstr ""
 #: src/emc/usr_intf/gscreen/gscreen.py:2821
 #, python-format
 msgid "Program loaded: %s"
-msgstr ""
+msgstr "Lastet program: %s"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:2974
 msgid "Manual Spindle Control"
-msgstr ""
+msgstr "Manuell spindelkontroll"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3054
 #: src/emc/usr_intf/gscreen/gscreen.py:3055
 msgid "Error with launching on-screen keyboard program -can't find program."
-msgstr ""
+msgstr "Klarte ikke starte skjermtastaturprogram - kunne ikke finne programmet."
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3065
 msgid "Keyboard"
-msgstr ""
+msgstr "Tastatur"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3098
 #, python-format
 msgid "Error with launching 'Onboard' on-screen keyboard program %s"
-msgstr ""
+msgstr "Klarte ikke starte «Onboard» skjermtastaturprogram %s"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3247
 #, python-format
@@ -17930,6 +17932,8 @@ msgid ""
 "Zero\n"
 " "
 msgstr ""
+"Null\n"
+" "
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3680
 msgid ""
@@ -17976,7 +17980,7 @@ msgstr ""
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3744
 msgid "Manual Toolchange"
-msgstr ""
+msgstr "Manuelt verktøybytte"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3746
 msgid "Operator Message"
@@ -17989,26 +17993,24 @@ msgstr "Start oppføring på nytt"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3795
 msgid "_Up     "
-msgstr ""
+msgstr "_Opp     "
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3797
-#, fuzzy
-#| msgid "Down"
 msgid "_Down"
-msgstr "Ned"
+msgstr "Ne_d"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3799
 msgid "_Jump to"
-msgstr ""
+msgstr "Hopp ti_l"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3819
 #, python-format
 msgid "Ready to Restart program from line %d"
-msgstr ""
+msgstr "Klar til å starte programmet på nytt fra linje %d"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:3852
 msgid "Invalid embedded tab configuration"
-msgstr ""
+msgstr "Ugyldig innbakt faneoppsett"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:4096
 #: src/emc/usr_intf/gscreen/gscreen.py:4163
@@ -18021,7 +18023,7 @@ msgstr ""
 
 #: src/emc/usr_intf/gscreen/gscreen.py:4166
 msgid "No axis selected to move"
-msgstr ""
+msgstr "Ingen valgt akse for bevegelse"
 
 #: src/emc/usr_intf/gscreen/gscreen.py:4236
 msgid "Can't home multiple axis - select HOME ALL instead"
@@ -18959,25 +18961,23 @@ msgstr ""
 
 #: lib/python/gladevcp/calculator.glade:332
 msgid "DEL"
-msgstr ""
+msgstr "DEL"
 
 #: lib/python/gladevcp/calculator.glade:346
 msgid "mm → in"
-msgstr ""
+msgstr "mm → tomme"
 
 #: lib/python/gladevcp/calculator.glade:361
 msgid "in → mm"
-msgstr ""
+msgstr "tomme → mm"
 
 #: lib/python/gladevcp/calculator.glade:376
-#, fuzzy
-#| msgid "Canceled"
 msgid "_Cancel_"
-msgstr "Avbrutt"
+msgstr "_Avbryt_"
 
 #: lib/python/gladevcp/calculator.glade:393
 msgid "_Ok"
-msgstr ""
+msgstr "_Ok"
 
 #~ msgid "Up"
 #~ msgstr "Opp"

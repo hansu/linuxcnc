@@ -343,6 +343,7 @@ static PyMemberDef Stat_members[] = {
     {(char*)"task_paused", T_INT, O(task.task_paused), READONLY},
     {(char*)"input_timeout", T_BOOL, O(task.input_timeout), READONLY},
     {(char*)"rotation_xy", T_DOUBLE, O(task.rotation_xy), READONLY},
+    {(char*)"ini_filename", T_STRING_INPLACE, O(task.ini_filename), READONLY},
     {(char*)"delay_left", T_DOUBLE, O(task.delayLeft), READONLY},
     {(char*)"queued_mdi_commands", T_INT, O(task.queuedMDIcommands), READONLY, (char*)"Number of MDI commands queued waiting to run." },
 
@@ -361,7 +362,7 @@ static PyMemberDef Stat_members[] = {
     {(char*)"queue", T_INT, O(motion.traj.queue), READONLY},
     {(char*)"active_queue", T_INT, O(motion.traj.activeQueue), READONLY},
     {(char*)"queue_full", T_BOOL, O(motion.traj.queueFull), READONLY},
-    {(char*)"id", T_INT, O(motion.traj.id), READONLY},
+    {(char*)"motion_id", T_INT, O(motion.traj.id), READONLY},
     {(char*)"paused", T_BOOL, O(motion.traj.paused), READONLY},
     {(char*)"feedrate", T_DOUBLE, O(motion.traj.scale), READONLY},
     {(char*)"rapidrate", T_DOUBLE, O(motion.traj.rapid_scale), READONLY},

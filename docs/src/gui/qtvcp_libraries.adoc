@@ -519,7 +519,7 @@ KEYBIND = Keylookup()
 === adding key bndings
 Note keybindings require code under the _processed_key_event_ function +
 to call _KEYBIND.call()_ - most handler file already have this code. +
-In the handler file, under the _initialed_ function use this general syntaxt: +
+In the handler file, under the _initialed_ function use this general syntax: +
  +
 KEYBINDING.add_call("DEFINED_KEY","FUNCTION TO CALL", USER DATA) +
  +
@@ -808,3 +808,149 @@ In the 'GENERAL FUNCTIONS SECTION' ADD: +
    def my_function(self, widget, state):
         print 'My function State = ()'.format(state)
 ----
+
+== QT Vismach Machine Graphics library
+
+Qt_vismach is a set of Python functions that can be used to create and animate models of machines. +
+Vismach displays the model in a 3D viewport and the model parts are animated as the values of associated +
+HAL pins change. +
+This is the Qt based version of the library, there is also a tkinter version available in linuxcnc. +
+the Qt version allows embedding the simulation in other screens. +
+
+=== Builtin Samples
+
+There are included sample panels in QTvcp for a 3 axis XYZ mill and a scara mill. +
+These samples, if loaded after a running linuxcnc configuration (including non-QTvcp based screens), +
+will react to machine movement. +
+
+from a terminal: +
+
+----
+qtvcp vismach_mill_xyz
+----
+
+or +
+
+----
+qtvcp vismach_scara
+----
+
+=== Primitives Library
+This gives basic building blocks of a simulated machine.
+
+==== Collection
+A collection is an object of individual machine parts. +
+This holds a hierarchical list of primitive shapes or STL objects that operations can be applied to.
+
+==== Translate
+This object will perform an openGL translation calculation on a Collection object.
+Translation refers to moving an object to a different position on screen. +
+
+==== Scale
+This object will perform an openGL scale function on a collection object.
+
+==== HalTranslate
+This object will perform an openGL translation calculation on a Collection object, offset by the HAL pin value. +
+Translation refers to moving an object to a different position on screen. +
+You can either read a pin from a component owned by the vismach object or, +
+if the component argument is set to None, read a HAL system pin directly.
+
+==== Rotate
+This object will perform an openGL rotation calculation on a Collection object,
+
+==== HalRotate
+This object will perform an openGL rotation calculation on a Collection object, offset by the HAL pin value. =
+You can either read a pin from a component owned by the vismach object or, +
+if the component argument is set to None, read a HAL system pin directly.
+
+=== HalToolCylinder
+This object will build a CylinderZ object that will change size and length based on 
+loaded tool dimensition (from the tool table) +
+It reads the HAL pins: 'halui.tool.diameter' and 'motion.tooloffset.z'
+
+(from mill_xyz sample)
+----
+toolshape = CylinderZ(0)
+toolshape = Color([1, .5, .5, .5], [toolshape])
+tool = Collection([
+    Translate([HalTranslate([tooltip], None, "motion.tooloffset.z", 0, 0, -MODEL_SCALING)], 0, 0, 0),
+    HalToolCylinder(toolshape)
+])
+----
+
+==== Track
+move and rotate an object to point from one capture()'d coordinate system to another.
+
+==== CoordsBase
+Base object to hold coordinates for primitive shapes.
+
+==== CylinderX, CylinderY, CylinderZ
+build a cylinder on the X (or Y or Z) axis by giving endpoint X (or Y, or Z) and radii coordinates. 
+
+==== Sphere
+build a sphere from center and radius coordinates.
+
+==== TriangleXY TriangleXZ TriangleYZ
+build a triangle in the soecified plane by giving the corners Z coordinates for each side
+
+==== ArcX
+build an arc by specifying 
+
+==== Box
+Build a box specified by the 6 coordinates
+
+==== BoxCentered
+specify the width in X and Y, and the height in Z the box is centered on the origin
+
+==== BoxCenteredXY
+specify the width in X and Y, and the height in Z
+the box is centered in X and Y, and runs from Z=0 up
+(or down) to the specified Z value
+
+==== Capture
+capture current transformation matrix of a collection. +
+note that this transforms from the current coordinate system to the viewport system, NOT to the world system
+
+==== Hud
+heads up display +
+draws a semi-transparent text box. +
+use HUD.strs for things that must be updated constantly, +
+and HUD.show("stuff") for one-shot things like error messages
+
+==== Color
+Applies a color to the parts of a collection
+
+==== AsciiSTL AsciiOBJ
+Loads a STL file/ STL data as a vismach part
+
+=== Importing and Initiating
+
+Here is how one might import the XYZ_mill simulation in a qtvcp panel or screen handler file. +
+
+Import the Mill library:
+[source,python]
+----
+############################
+# **** IMPORT SECTION **** #
+############################
+
+import mill_xyz as MILL
+----
+
+instantiate the simulation widget and add it to the screen's main layout: +
+[source,python]
+----
+    ##########################################
+    # Special Functions called from QTVCP
+    ##########################################
+
+    # at this point:
+    # the widgets are instantiated.
+    # the HAL pins are built but HAL is not set ready
+    def initialized__(self):
+        machine = MILL.Window()
+        self.w.mainLayout.addWidget(machine)
+----
+=== More Information
+More information on how to build a custom machine simulation.
+<<cha:qtvcp-vismach,QtVCP Vismach>>
