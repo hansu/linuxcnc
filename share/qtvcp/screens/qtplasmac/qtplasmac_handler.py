@@ -1,10 +1,10 @@
-VERSION = '1.222.172'
+VERSION = '1.223.181'
 
 '''
 qtplasmac_handler.py
 
-Copyright (C) 2020, 2021  Phillip A Carter
-Copyright (C) 2020, 2021  Gregory D Carl
+Copyright (C) 2020, 2021, 2022  Phillip A Carter
+Copyright (C) 2020, 2021, 2022  Gregory D Carl
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -53,6 +53,7 @@ from qtvcp.lib.qtplasmac import updater as UPDATER
 from qtvcp.widgets.camview_widget import CamView as CAM
 from qtvcp.widgets.file_manager import FileManager as FILE_MAN
 from qtvcp.widgets.gcode_editor import GcodeEditor as EDITOR
+from qtvcp.widgets.gcode_editor import GcodeDisplay as DISPLAY
 from qtvcp.widgets.mdi_history import MDIHistory as MDI_HISTORY
 from qtvcp.widgets.mdi_line import MDILine as MDI_LINE
 from qtvcp.widgets.origin_offsetview import OriginOffsetView as OFFSETVIEW
@@ -179,6 +180,7 @@ class HandlerClass:
         KEYBIND.add_call('Key_Period', 'on_keycall_BNEG')
         KEYBIND.add_call('Key_Greater', 'on_keycall_BNEG')
         KEYBIND.add_call('Key_End', 'on_keycall_END')
+        KEYBIND.add_call('Key_Delete', 'on_keycall_DELETE')
         KEYBIND.add_call('Alt+Key_Return', 'on_keycall_ALTRETURN')
         KEYBIND.add_call('Alt+Key_Enter', 'on_keycall_ALTRETURN')
         KEYBIND.add_call('Key_Return', 'on_keycall_RETURN')
@@ -214,6 +216,7 @@ class HandlerClass:
         self.unitsPerMm = 1
         self.units = self.iniFile.find('TRAJ', 'LINEAR_UNITS')
         if self.units == 'inch':
+            self.units = 'in'
             self.unitsPerMm = 0.03937
         self.maxPidP = self.thcFeedRate / self.unitsPerMm * 0.1
         self.mode = int(self.iniFile.find('QTPLASMAC', 'MODE')) or 0
@@ -271,6 +274,7 @@ class HandlerClass:
         self.firstHoming = False
         self.droScale = 1
         self.mdiError = False
+        self.extLaserButton = False
         # plasmac states
         self.IDLE           =  0
         self.PROBE_HEIGHT   =  1
@@ -352,6 +356,7 @@ class HandlerClass:
         STATUS.connect('system_notify_button_pressed', self.system_notify_button_pressed)
         STATUS.connect('tool-in-spindle-changed', self.tool_changed)
         STATUS.connect('periodic', lambda w: self.update_periodic())
+        STATUS.connect('metric-mode-changed', self.metric_mode_changed)
         self.w.setWindowTitle('{} - QtPlasmaC v{}, powered by QtVCP on LinuxCNC v{}'.format(self.machineName, VERSION, linuxcnc.version.split(':')[0]))
         self.startupTimer = QTimer()
         self.startupTimer.timeout.connect(self.startup_timeout)
@@ -407,6 +412,9 @@ class HandlerClass:
         EDITOR.gcodeLexerCall = self.new_gcodeLexerCall
         self.old_pythonLexerCall = EDITOR.pythonLexerCall
         EDITOR.pythonLexerCall = self.new_pythonLexerCall
+        self.old_returnFromDialog = EDITOR.returnFromDialog
+        EDITOR.returnFromDialog = self.new_returnFromDialog
+        DISPLAY.load_preference = self.new_load_preference
 
     # save a non gcode file and don't load it into linuxcnc
     def new_saveReturn(self, filename):
@@ -414,6 +422,10 @@ class HandlerClass:
         if saved is not None:
             self.w.gcode_editor.editor.setModified(False)
             if saved[-3:] in ['ngc', '.nc', 'tap']:
+                self.rflSelected = False
+                self.rflActive = False
+                self.startLine = 0
+                self.preRflFile = ''
                 ACTION.OPEN_PROGRAM(saved)
 
     # open a non gcode file and don't load it into linuxcnc
@@ -430,7 +442,7 @@ class HandlerClass:
             head = _translate('HandlerClass', 'Unsaved Changes')
             msg0 = _translate('HandlerClass', 'Unsaved changes will be lost')
             msg1 = _translate('HandlerClass', 'Do you want to exit')
-            if not self.dialog_show_yesno(QMessageBox.Question, head, '{}\n\n{}?\n'.format(msg0, msg1)):
+            if not self.dialog_show_yesno(QMessageBox.Question, head, '\n{}\n\n{}?\n'.format(msg0, msg1)):
                 return
         self.w.preview_stack.setCurrentIndex(0)
         if self.fileOpened == True and self.w.gcode_editor.editor.isModified():
@@ -452,6 +464,32 @@ class HandlerClass:
     # we don't use lexer colors
     def new_pythonLexerCall(self):
         pass
+
+    # don't allow rfl.ngc as a file name
+    def new_returnFromDialog(self, w, message):
+        if message.get('NAME') == self.w.gcode_editor.load_dialog_code:
+            path = message.get('RETURN')
+            code = bool(message.get('ID') == '%s__'% self.w.gcode_editor.objectName())
+            if path and code:
+                self.w.gcode_editor.openReturn(path)
+        elif message.get('NAME') == self.w.gcode_editor.save_dialog_code:
+            path = message.get('RETURN')
+            code = bool(message.get('ID') == '%s__'% self.w.gcode_editor.objectName())
+            if path and code:
+                if not os.path.basename(path) in ['rfl', 'rfl.ngc']:
+                    self.w.gcode_editor.saveReturn(path)
+                else:
+                    head = _translate('HandlerClass', 'Save Error')
+                    msg0 = _translate('HandlerClass', 'The file name')
+                    msg1 = _translate('HandlerClass', 'is not allowed')
+                    self.dialog_show_ok(QMessageBox.Warning, '{}'.format(head), '\n{} "{}" {}\n\n'.format(msg0, os.path.basename(path), msg1))
+                    self.w.gcode_editor.getSaveFileName()
+                    return
+
+    # load the qtplasmac preferences file rather than the qtvcp preferences file
+    def new_load_preference(self, w):
+        self.w.gcode_editor.editor.load_text(os.path.join(self.PATHS.CONFIGPATH, self.machineName + '.prefs'))
+        self.w.gcode_editor.editor.setCursorPosition(self.w.gcode_editor.editor.lines(), 0)
 
 # patched camera functions
     def camview_patch(self):
@@ -534,11 +572,11 @@ class HandlerClass:
 
     # not used, placeholder for future change in qt5_graphics.py
     def new_joint_dro_format_OFF(self,s,spd,num_of_joints,limit, homed):
-        return limit, homed, self.get_overlay_text(True), ['']
+        return limit, homed, self.get_overlay_text(), ['']
 
     # replace dro with current material
     def new_dro_format(self,s,spd,dtg,limit,homed,positions,axisdtg,g5x_offset,g92_offset,tlo_offset):
-        return limit, homed, self.get_overlay_text(True), ['']
+        return limit, homed, self.get_overlay_text(), ['']
 
 # patched screen options functions
     def screen_options_patch(self):
@@ -635,6 +673,7 @@ class HandlerClass:
         self.extPausePin = self.h.newpin('ext_pause', hal.HAL_BIT, hal.HAL_IN)
         self.extAbortPin = self.h.newpin('ext_abort', hal.HAL_BIT, hal.HAL_IN)
         self.extTouchOffPin = self.h.newpin('ext_touchoff', hal.HAL_BIT, hal.HAL_IN)
+        self.extLaserTouchOffPin = self.h.newpin('ext_laser_touchoff', hal.HAL_BIT, hal.HAL_IN)
         self.extRunPausePin = self.h.newpin('ext_run_pause', hal.HAL_BIT, hal.HAL_IN)
         self.extCutRecRevPin = self.h.newpin('ext_cutrec_rev', hal.HAL_BIT, hal.HAL_IN)
         self.extCutRecFwdPin = self.h.newpin('ext_cutrec_fwd', hal.HAL_BIT, hal.HAL_IN)
@@ -672,6 +711,8 @@ class HandlerClass:
         self.tabsAlwaysEnabled = self.h.newpin('tabs_always_enabled', hal.HAL_BIT, hal.HAL_IN)
         self.jogInhibited = self.h.newpin('jog_inhibited', hal.HAL_BIT, hal.HAL_IN)
         self.sensorActive = self.h.newpin('sensor_active', hal.HAL_BIT, hal.HAL_IN)
+        self.laserRecStatePin = self.h.newpin('laser_recovery_state', hal.HAL_S32, hal.HAL_IN)
+        self.zOffsetPin = self.h.newpin('z_offset_counts', hal.HAL_S32, hal.HAL_IN)
 
     def link_hal_pins(self):
         #arc parameters
@@ -760,14 +801,16 @@ class HandlerClass:
         CALL(['halcmd', 'net', 'plasmac:motion-type', 'qtplasmac.motion_type'])
         CALL(['halcmd', 'net', 'plasmac:torch-on', 'qtplasmac.torch_on'])
         # misc
-        CALL(['halcmd', 'net', 'plasmac:probe-test-error', 'plasmac.probe-test-error', 'qtplasmac.probe_test_error'])
-        CALL(['halcmd', 'net', 'plasmac:state', 'plasmac.state-out', 'qtplasmac.plasmac_state'])
-        CALL(['halcmd', 'net', 'plasmac:z-height', 'plasmac.z-height', 'qtplasmac.z_height'])
         CALL(['halcmd', 'net', 'plasmac:consumable-changing', 'plasmac.consumable-changing', 'qtplasmac.consumable_changing'])
-        CALL(['halcmd', 'net', 'plasmac:laser-on', 'qtplasmac.laser_on'])
         CALL(['halcmd', 'net', 'plasmac:gcode-scale', 'plasmac.gcode-scale', 'qtplasmac.gcode_scale'])
         CALL(['halcmd', 'net', 'plasmac:jog-inhibit', 'qtplasmac.jog_inhibited'])
+        CALL(['halcmd', 'net', 'plasmac:laser-on', 'qtplasmac.laser_on'])
+        CALL(['halcmd', 'net', 'plasmac:laser-recovery-state', 'plasmac.laser-recovery-state', 'qtplasmac.laser_recovery_state'])
+        CALL(['halcmd', 'net', 'plasmac:probe-test-error', 'plasmac.probe-test-error', 'qtplasmac.probe_test_error'])
         CALL(['halcmd', 'net', 'plasmac:sensor_active', 'plasmac.sensor-active', 'qtplasmac.sensor_active'])
+        CALL(['halcmd', 'net', 'plasmac:state', 'plasmac.state-out', 'qtplasmac.plasmac_state'])
+        CALL(['halcmd', 'net', 'plasmac:z-height', 'plasmac.z-height', 'qtplasmac.z_height'])
+        CALL(['halcmd', 'net', 'plasmac:z-offset-counts', 'qtplasmac.z_offset_counts'])
 
 # *** add system hal pin changes here that may affect existing configs ***
 # *** these may be removed after auto updating is implemented          ***
@@ -920,21 +963,31 @@ class HandlerClass:
         self.overlayProgress.setFormat('')
         self.overlayProgress.hide()
 
-    def get_overlay_text(self, kerf):
+    def get_overlay_text(self):
         text = ['']
         if not self.w.chk_overlay.isChecked():
             return text
-        if '.' in self.w.cut_feed_rate.text() and len(self.w.cut_feed_rate.text().split('.')[0]) > 3:
-            text.append('FR: {}\n'.format(self.w.cut_feed_rate.text().split('.')[0]))
+        scale = 1
+        if self.units == 'in' and self.w.dro_z.display_units_mm:
+            scale = 25.4
+        elif self.units == 'mm' and not self.w.dro_z.display_units_mm:
+            scale = 1 / 25.4
+        if not self.w.dro_z.display_units_mm:
+            fr = 1
+            ou = 3
         else:
-            text.append('FR: {}\n'.format(self.w.cut_feed_rate.text()))
-        text.append('PH: {}\n'.format(self.w.pierce_height.text()))
-        text.append('PD: {}\n'.format(self.w.pierce_delay.text()))
-        text.append('CH: {}'.format(self.w.cut_height.text()))
-        if kerf == True:
-            text.append('\nKW: {}'.format(self.w.kerf_width.text()))
+            fr = 0
+            ou = 2
+        if '.' in self.w.cut_feed_rate.text() and len(self.w.cut_feed_rate.text().split('.')[0]) > 3:
+            text.append('FR: {:.{}f}'.format(float(self.w.cut_feed_rate.text().split('.')[0]) * scale, fr))
+        else:
+            text.append('FR: {:.{}f}'.format(float(self.w.cut_feed_rate.text()) * scale, fr))
+        text.append('PH: {:.{}f}'.format(float(self.w.pierce_height.text()) * scale, ou))
+        text.append('PD: {}'.format(self.w.pierce_delay.text()))
+        text.append('CH: {:.{}f}'.format(float(self.w.cut_height.text()) * scale, ou))
+        text.append('KW: {:.{}f}'.format(float(self.w.kerf_width.text()) * scale, ou))
         if self.pmx485Exists:
-            text.append('\nCA: {}'.format(self.w.cut_amps.text()))
+            text.append('CA: {}'.format(self.w.cut_amps.text()))
         return text
 
     def offset_peripherals(self):
@@ -1315,21 +1368,22 @@ class HandlerClass:
         pass
 
     def pause_changed(self, obj, state):
+        if hal.get_value('plasmac.paused-motion') or hal.get_value('plasmac.cut-recovering'):
+            if state:
+                self.w.wcs_button.setEnabled(False)
+            return
         if state:
             # time delay workaround to ensure userspace pins/variables have time to set
             time.sleep(0.1)
-            if self.ccButton and not hal.get_value('plasmac.cut-recovering') and hal.get_value('plasmac.stop-type-out'):
+            if self.ccButton and hal.get_value('plasmac.stop-type-out'):
                 self.w[self.ccButton].setEnabled(True)
             if self.tpButton and self.w.torch_enable.isChecked():
                 self.w[self.tpButton].setEnabled(True)
             if self.otButton and self.w.ohmic_probe_enable.isChecked():
                 self.w[self.otButton].setEnabled(True)
             self.w.wcs_button.setEnabled(False)
-            if hal.get_value('plasmac.stop-type-out') or hal.get_value('plasmac.cut-recovering'):
-                self.w.set_cut_recovery()
             self.set_tab_jog_states(True)
-        elif not self.w.cut_rec_fwd.isDown() and not self.w.cut_rec_rev.isDown() \
-             and not self.extCutRecFwdPin.get() and not self.extCutRecRevPin.get():
+        else:
             self.w.jog_stack.setCurrentIndex(0)
             if self.ccButton:
                 self.w[self.ccButton].setEnabled(False)
@@ -1496,12 +1550,17 @@ class HandlerClass:
             self.w.chk_override_jog.setChecked(False)
             hal.set_p('plasmac.override-jog', str(state))
 
+    def z_offset_changed(self, height):
+        if STATUS.is_interp_paused() and not height:
+            if(hal.get_value('plasmac.stop-type-out') or hal.get_value('plasmac.cut-recovering')):
+                self.w.set_cut_recovery()
+                self.w.laser.setEnabled(True)
+
     def override_jog_changed(self, state):
         if state:
             hal.set_p('plasmac.override-jog', '1')
         else:
             hal.set_p('plasmac.override-jog', '0')
-
 
     def tool_changed(self, obj, tool):
         if tool == 0:
@@ -1512,7 +1571,7 @@ class HandlerClass:
             self.w.lbl_tool.setText('UNKNOWN')
 
     def gcodes_changed(self, obj, cod):
-        if self.units == 'inch' and STATUS.is_metric_mode():
+        if self.units == 'in' and STATUS.is_metric_mode():
             self.droScale = 25.4
             self.gcodeScalePin.set(25.4)
         elif self.units == 'mm' and not STATUS.is_metric_mode():
@@ -1526,22 +1585,20 @@ class HandlerClass:
     def mcodes_changed(self, obj, cod):
         self.w.lbl_mcodes.setText('{}'.format(cod))
 
+    def metric_mode_changed(self, obj, state):
+        self.w.gcodegraphics.updateGL()
+
     def set_start_line(self, line):
         if self.w.chk_run_from_line.isChecked():
             if self.w.sender():
                 if self.w.sender().objectName() == 'gcode_editor_display':
                     return
             if line > 1:
-                if not 'rfl.ngc' in self.lastLoadedProgram:
-                    msg0 = _translate('HandlerClass', 'SELECTED')
-                    self.runText = '{} {}'.format(msg0, line)
-                    self.rflSelected = True
-                    self.startLine = line - 1
-                else:
-                    head = _translate('HandlerClass', 'RUN FROM LINE ERROR')
-                    msg0 = _translate('HandlerClass', 'Cannot select line while')
-                    msg1 = _translate('HandlerClass', 'run from line is active')
-                    STATUS.emit('error', linuxcnc.OPERATOR_ERROR, '{}:\n{}\n{}\n'.format(head, msg0, msg1))
+                msg0 = _translate('HandlerClass', 'SELECTED')
+                self.w.run.setText('{} {}'.format(msg0, line))
+                self.runText = '{} {}'.format(msg0, line)
+                self.rflSelected = True
+                self.startLine = line - 1
             elif self.rflActive:
                 txt0 = _translate('HandlerClass', 'RUN FROM LINE')
                 txt1 = _translate('HandlerClass', 'CYCLE START')
@@ -1560,10 +1617,10 @@ class HandlerClass:
                 for axis in 'XY':
                     if not axis in self.gcodeProps:
                         self.gcodeProps[axis] = '{0} to {0} = {1}'.format(STATUS.stat.g5x_offset['XY'.index(axis)], 0)
-                if props['GCode Units'] == 'in':
-                    STATUS.emit('metric-mode-changed', False)
-                else:
-                    STATUS.emit('metric-mode-changed', True)
+            if props['GCode Units'] == 'in':
+                STATUS.emit('metric-mode-changed', False)
+            else:
+                STATUS.emit('metric-mode-changed', True)
 
     def error_update(self, obj, kind, error):
         if kind == linuxcnc.OPERATOR_ERROR:
@@ -1591,6 +1648,15 @@ class HandlerClass:
     def ext_touch_off(self, state):
         if self.w.touch_xy.isEnabled() and state:
             self.touch_xy_clicked()
+
+    def ext_laser_touch_off(self, state):
+        if self.w.laser.isEnabled():
+            if state:
+                self.extLaserButton = True
+                self.laser_pressed()
+            else:
+                self.extLaserButton = False
+                self.laser_clicked()
 
     def ext_jog_slow(self, state):
         if self.w.jog_slow.isEnabled() and state:
@@ -1651,8 +1717,16 @@ class HandlerClass:
             if self.torchPulse:
                 self.torch_pulse(True)
             hal.set_p('plasmac.cut-recovery', '0')
+            self.laserOnPin.set(0)
             self.interp_idle(None)
             self.wcs_rotation('set')
+
+    def pause_pressed(self):
+        if hal.get_value('plasmac.cut-recovering'):
+            self.w.jog_stack.setCurrentIndex(0)
+            self.laserOnPin.set(0)
+        self.cancelWait = False
+        self.w.laser.setEnabled(False)
 
     def user_button_pressed(self, button):
         self.user_button_down(button)
@@ -1708,10 +1782,10 @@ class HandlerClass:
         bkpName = '{}_V{}_{}.tar.gz'.format(self.machineName, VERSION, time.strftime('%y-%m-%d_%H-%M-%S'))
         with tarfile.open('{}/{}'.format(bkpPath, bkpName), mode='w:gz', ) as archive:
             archive.add('{}'.format(self.PATHS.CONFIGPATH))
-        head = _translate('HandlerClass', 'BACKUP COMPLETE')
+        head = _translate('HandlerClass', 'Backup Complete')
         msg0 = _translate('HandlerClass', 'A compressed backup of the machine configuration including the machine logs has been saved in your home directory as')
         msg1 = _translate('HandlerClass', 'It is safe to delete this file at any time')
-        self.dialog_show_ok(QMessageBox.Information, head, '{}:\n{}\n\n{}\n'.format(msg0, bkpName, msg1))
+        self.dialog_show_ok(QMessageBox.Information, head, '\n{}:\n{}\n\n{}\n'.format(msg0, bkpName, msg1))
 
     def set_offsets_clicked(self):
         if self.developmentPin:
@@ -1742,12 +1816,10 @@ class HandlerClass:
         mid, size = GlCanonDraw.extents_info(self.w.gcodegraphics)
         if self.gcodeProps:
             mult = 1
-            if self.units == 'inch':
-                if self.gcodeProps['Units'] == 'mm':
-                    mult = 0.03937
-            else:
-                if self.gcodeProps['Units'] == 'in':
-                    mult = 25.4
+            if self.units == 'in' and self.gcodeProps['Units'] == 'mm':
+                mult = 0.03937
+            elif self.units == 'mm' and self.gcodeProps['Units'] == 'in':
+                mult = 25.4
             x = (round(float(self.gcodeProps['X'].split()[0]) * mult, 4))
             y = (round(float(self.gcodeProps['Y'].split()[0]) * mult, 4))
             xl = (round(float(self.gcodeProps['X'].split('=')[1].split()[0]) * mult, 4))
@@ -1756,7 +1828,7 @@ class HandlerClass:
             x = y = xl = yl = 0
         if (mid[0] == 0 and mid[1] == 0) or mid[0] > self.xLen or mid[1] > self.yLen or \
            self.w.view_t.isChecked() or self.w.view_t.isDown() or self.fileClear:
-            mult = 1 if self.units == 'inch' else 25.4
+            mult = 1 if self.units == 'in' else 25.4
             zoomScale = (self.w.table_zoom_scale.value() * 2)
             mid = [(self.xLen - (x * 2) - xl) / mult / 2, (self.yLen - (y * 2) - yl) / mult / 2, 0]
             size = [self.xLen / mult / zoomScale, self.yLen / mult / zoomScale, 0]
@@ -1805,7 +1877,6 @@ class HandlerClass:
     def file_clear_clicked(self):
         if self.fileOpened:
             self.fileClear = True
-            self.startLine = 0
             self.rflSelected = False
             self.rflActive = False
             self.startLine = 0
@@ -2047,7 +2118,7 @@ class HandlerClass:
             if self.exitMessage:
                 msg0 += '{}\n\n'.format(self.exitMessage)
             msg0 += _translate('HandlerClass', 'Do you want to shutdown QtPlasmaC')
-            if self.dialog_show_yesno(icon, head, '{}?\n'.format(msg0)):
+            if self.dialog_show_yesno(icon, head, '\n{}?\n'.format(msg0)):
                 event.accept()
             else:
                 event.ignore()
@@ -2061,8 +2132,9 @@ class HandlerClass:
     # split out qtplasmac specific prefs into a separate file (pre V1.222.170 2022/03/08)
         if not os.path.isfile(prefsFile):
             old = os.path.join(self.PATHS.CONFIGPATH, 'qtplasmac.prefs')
-            new = os.path.join(self.PATHS.CONFIGPATH, 'qtvcp.prefs')
-            UPDATER.split_prefs_file(old, new, prefsFile)
+            if os.path.isfile(old):
+                new = os.path.join(self.PATHS.CONFIGPATH, 'qtvcp.prefs')
+                UPDATER.split_prefs_file(old, new, prefsFile)
 
     def set_blank_gcodeprops(self):
         # a workaround for the extreme values in gcodeprops for a blank file
@@ -2094,6 +2166,8 @@ class HandlerClass:
                 if not state and button == self.tpButton and self.torchTimer.isActive():
                     continue
                 self.w[button].setEnabled(state)
+        if self.laserRecStatePin.get():
+            self.w.laser.setEnabled(False)
         if self.tpButton and not self.w.torch_enable.isChecked():
             self.w[self.tpButton].setEnabled(False)
         if self.frButton and self.w.gcode_display.lines() == 1:
@@ -2111,7 +2185,7 @@ class HandlerClass:
             text = _translate('HandlerClass', 'ERROR SENT TO MACHINE LOG')
         else:
             text = ''
-        self.w.error_label.setText("{}".format(text))
+        self.w.error_label.setText('{}'.format(text))
 
     def touch_off_xy(self, x, y):
         if STATUS.is_on_and_idle() and STATUS.is_all_homed():
@@ -2124,14 +2198,10 @@ class HandlerClass:
         self.boundsError[boundsType] = False
         msgList = []
         boundsMultiplier = 1
-        if self.units == 'inch':
-            units = 'in'
-            if self.gcodeProps['Units'] == 'mm':
-                boundsMultiplier = 0.03937
-        else:
-            units = 'mm'
-            if self.gcodeProps['Units'] == 'in':
-                boundsMultiplier = 25.4
+        if self.units == 'in' and self.gcodeProps['Units'] == 'mm':
+            boundsMultiplier = 0.03937
+        elif self.units == 'mm' and self.gcodeProps['Units'] == 'in':
+            boundsMultiplier = 25.4
         xMin = round(float(self.gcodeProps['X'].split()[0]) * boundsMultiplier + xOffset, 5)
         if xMin < self.xMin:
             amount = float(self.xMin - xMin)
@@ -2160,7 +2230,7 @@ class HandlerClass:
             msgList.append('MAX')
             msgList.append('{:0.2f}'.format(amount))
             self.boundsError[boundsType] = True
-        return msgList, units, xMin, yMin, xMax, yMax
+        return msgList, self.units, xMin, yMin, xMax, yMax
 
     def save_plasma_parameters(self):
         self.PREFS.putpref('Arc OK High', self.w.arc_ok_high.value(), float, 'PLASMA_PARAMETERS')
@@ -2227,6 +2297,7 @@ class HandlerClass:
         self.w.power.released.connect(lambda:self.power_button("released", False))
         self.w.power.clicked.connect(lambda:self.power_button("clicked", None))
         self.w.run.pressed.connect(self.run_pressed)
+        self.w.pause.pressed.connect(self.pause_pressed)
         self.w.abort.pressed.connect(self.abort_pressed)
         self.w.file_reload.clicked.connect(self.file_reload_clicked)
         self.w.jog_slow.pressed.connect(self.jog_slow_pressed)
@@ -2350,8 +2421,8 @@ class HandlerClass:
         self.w.cut_rec_sw.pressed.connect(lambda:self.cutrec_move(1, -1, -1))
         self.w.cut_rec_w.pressed.connect(lambda:self.cutrec_move(1, -1, 0))
         self.w.cut_rec_nw.pressed.connect(lambda:self.cutrec_move(1, -1, 1))
-        self.xOffsetPin.value_changed.connect(self.cutrec_offset_changed)
-        self.yOffsetPin.value_changed.connect(self.cutrec_offset_changed)
+        self.xOffsetPin.value_changed.connect(lambda v:self.cutrec_offset_changed(v, self.yOffsetPin.get()))
+        self.yOffsetPin.value_changed.connect(lambda v:self.cutrec_offset_changed(self.xOffsetPin.get(), v))
         self.offsetsActivePin.value_changed.connect(lambda v:self.offsets_active_changed(v))
         self.consChangePin.value_changed.connect(lambda v:self.consumable_change_changed(v))
         self.w.cam_mark.pressed.connect(self.cam_mark_pressed)
@@ -2399,6 +2470,7 @@ class HandlerClass:
         self.extPausePin.value_changed.connect(lambda v:self.ext_pause(v))
         self.extAbortPin.value_changed.connect(lambda v:self.ext_abort(v))
         self.extTouchOffPin.value_changed.connect(lambda v:self.ext_touch_off(v))
+        self.extLaserTouchOffPin.value_changed.connect(lambda v:self.ext_laser_touch_off(v))
         self.extRunPausePin.value_changed.connect(lambda v:self.ext_run_pause(v))
         self.extHeightOvrPlusPin.value_changed.connect(lambda v:self.height_ovr_pressed(v,1))
         self.extHeightOvrMinusPin.value_changed.connect(lambda v:self.height_ovr_pressed(v,-1))
@@ -2450,6 +2522,8 @@ class HandlerClass:
         self.w.chk_override_jog.stateChanged.connect(self.override_jog_changed)
         self.jogInhibited.value_changed.connect(lambda v:self.jog_inhibited_changed(v))
         self.sensorActive.value_changed.connect(lambda v:self.sensor_active_changed(v))
+        self.zOffsetPin.value_changed.connect(lambda v:self.z_offset_changed(v))
+        self.laserRecStatePin.value_changed.connect(lambda v:self.laser_recovery_state_changed(v))
 
     def conv_call(self, operation):
         if self.developmentPin:
@@ -2527,7 +2601,7 @@ class HandlerClass:
 
     def set_spinbox_parameters(self):
         self.w.max_offset_velocity_in.setText('{}'.format(int(self.thcFeedRate)))
-        if self.units == 'inch':
+        if self.units == 'in':
             self.w.setup_feed_rate.setRange(4.0, int(self.thcFeedRate))
             self.w.setup_feed_rate.setDecimals(1)
             self.w.setup_feed_rate.setSingleStep(0.1)
@@ -2897,7 +2971,7 @@ class HandlerClass:
                 self.w.pause.setText(_translate('HandlerClass', 'CYCLE RESUME'))
             else:
                 self.w.pause.setText('')
-        else:
+        elif not self.w.jog_stack.currentIndex():
             self.w.pause.setText(_translate('HandlerClass', 'CYCLE PAUSE'))
         text = _translate('HandlerClass', 'FEED')
         if self.w.feed_slider.value() != 100:
@@ -3013,7 +3087,7 @@ class HandlerClass:
             self.pulseTimer.stop()
 
     def laser_timeout(self):
-        if self.w.laser.isDown():
+        if self.w.laser.isDown() or self.extLaserButton:
             self.laserOnPin.set(0)
             self.laserButtonState = 'reset'
             self.w.laser.setText(_translate('HandlerClass', 'LASER'))
@@ -3402,6 +3476,8 @@ class HandlerClass:
             for command in commands.split('\\'):
                 command = command.strip()
                 self.user_button_command(command)
+                if command[0] == "%":
+                    continue
                 while not STATUS.is_interp_idle():
                     self.w.gcodegraphics.updateGL()
                 if command.lower().replace(' ', '').startswith('g10l20') and self.fileOpened:
@@ -3528,6 +3604,7 @@ class HandlerClass:
             self.change_consumables(state)
 
     def change_consumables(self, state):
+        self.w.laser.setEnabled(False)
         if hal.get_value('axis.x.eoffset-counts') or hal.get_value('axis.y.eoffset-counts'):
             hal.set_p('plasmac.consumable-change', '0')
             hal.set_p('plasmac.x-offset', '0')
@@ -3985,7 +4062,7 @@ class HandlerClass:
             break
         head = _translate('HandlerClass', 'Delete Material')
         msg0 = _translate('HandlerClass', 'Do you really want to delete material')
-        if not self.dialog_show_yesno(QMessageBox.Question, '{}'.format(head), '{} #{}?\n'.format(msg0, num)):
+        if not self.dialog_show_yesno(QMessageBox.Question, '{}'.format(head), '\n{} #{}?\n'.format(msg0, num)):
             return
         COPY(self.materialFile, self.tmpMaterialFile)
         with open(self.tmpMaterialFile, 'r') as inFile:
@@ -4453,7 +4530,12 @@ class HandlerClass:
             ACTION.SET_MANUAL_MODE()
             self.vkb_hide()
 
+    def laser_recovery_state_changed(self, value):
+        hal.set_p('plasmac.laser-recovery-start', '0')
+
     def laser_clicked(self):
+        if STATUS.is_interp_paused():
+            return
         xPos = STATUS.get_position()[0][0] - self.laserOffsetX
         yPos = STATUS.get_position()[0][1] - self.laserOffsetY
         if xPos < self.xMin or xPos > self.xMax or yPos < self.yMin or yPos > self.yMax:
@@ -4474,8 +4556,21 @@ class HandlerClass:
         self.laserButtonState = self.sheet_align(self.laserButtonState, self.w.laser, self.laserOffsetX, self.laserOffsetY)
 
     def laser_pressed(self):
+        if STATUS.is_interp_paused() and not self.laserRecStatePin.get():
+            xPos = STATUS.get_position()[0][0] + self.laserOffsetX
+            yPos = STATUS.get_position()[0][1] + self.laserOffsetY
+            if xPos < self.xMin or xPos > self.xMax or yPos < self.yMin or yPos > self.yMax:
+                head = _translate('HandlerClass', 'LASER ERROR')
+                msg0 = _translate('HandlerClass', 'Torch cannot move outside the machine boundary')
+                STATUS.emit('error', linuxcnc.OPERATOR_ERROR, '{}:\n{}\n'.format(head, msg0))
+                return
+            hal.set_p('plasmac.laser-x-offset', '{}'.format(str(int(self.laserOffsetX / self.oScale))))
+            hal.set_p('plasmac.laser-y-offset', '{}'.format(str(int(self.laserOffsetY / self.oScale))))
+            hal.set_p('plasmac.laser-recovery-start', '1')
+            hal.set_p('plasmac.cut-recovery', '1')
+            self.laserOnPin.set(1)
+            return
         self.laserTimer.start(750)
-        return
 
     def sheet_align(self, button_state, button, offsetX, offsetY):
         if button_state == 'markedge':
@@ -5082,6 +5177,7 @@ class HandlerClass:
         self.w.cut_rec_cancel.setEnabled(False)
         self.cutrec_speed_changed(self.w.cut_rec_speed.value())
         hal.set_p('plasmac.cut-recovery', '0')
+        self.laserOnPin.set(0)
         self.xOrig = hal.get_value('axis.x.eoffset-counts')
         self.yOrig = hal.get_value('axis.y.eoffset-counts')
         self.zOrig = hal.get_value('axis.z.eoffset-counts')
@@ -5103,63 +5199,62 @@ class HandlerClass:
         if self.w.cut_rec_fwd.isEnabled() and self.w.cut_rec_rev.isEnabled():
             speed = float(self.w.cut_rec_speed.value()) * 0.01 * direction
             hal.set_p('plasmac.paused-motion-speed',str(speed))
+            hal.set_p('plasmac.cut-recovery', '1')
 
     def cutrec_move(self, state, x, y):
         if not STATUS.is_interp_paused():
             return
         if state:
             maxMove = 10
-            if self.units == 'inch':
+            if self.units == 'in':
                 maxMove = 0.4
+            laser = self.laserRecStatePin.get() > 0
             distX = hal.get_value('qtplasmac.kerf_width-f') * x
             distY = hal.get_value('qtplasmac.kerf_width-f') * y
-            if (hal.get_value('plasmac.axis-x-position') + \
-                hal.get_value('axis.x.eoffset-counts') * self.oScale + distX > self.xMax) or \
-                (hal.get_value('axis.x.eoffset-counts') * self.oScale + distX > maxMove):
+            xNew = hal.get_value('plasmac.axis-x-position') + hal.get_value('axis.x.eoffset') - (self.laserOffsetX * laser) + distX
+            yNew = hal.get_value('plasmac.axis-y-position') + hal.get_value('axis.y.eoffset') - (self.laserOffsetY * laser) + distY
+            if xNew > self.xMax or xNew < self.xMin or yNew > self.yMax or yNew < self.yMin:
                 return
-            if (hal.get_value('plasmac.axis-x-position') + \
-                hal.get_value('axis.x.eoffset-counts') * self.oScale + distX < self.xMin) or \
-                (hal.get_value('axis.x.eoffset-counts') * self.oScale + distX < -maxMove):
-                return
-            if (hal.get_value('plasmac.axis-y-position') + \
-                hal.get_value('axis.y.eoffset-counts') * self.oScale + distY > self.yMax) or \
-                (hal.get_value('axis.y.eoffset-counts') * self.oScale + distY > maxMove):
-                return
-            if (hal.get_value('plasmac.axis-y-position') + \
-                hal.get_value('axis.y.eoffset-counts') * self.oScale + distY < self.yMin) or \
-                (hal.get_value('axis.y.eoffset-counts') * self.oScale + distY < -maxMove):
+            xTotal = hal.get_value('axis.x.eoffset') - (self.laserOffsetX * laser) + distX
+            yTotal = hal.get_value('axis.y.eoffset') - (self.laserOffsetY * laser) + distY
+            if xTotal > maxMove or xTotal < -maxMove or yTotal > maxMove or yTotal < -maxMove:
                 return
             moveX = int(distX / self.oScale)
             moveY = int(distY / self.oScale)
-            hal.set_p('plasmac.x-offset', '{}'.format(str(hal.get_value('axis.x.eoffset-counts') + moveX)))
-            hal.set_p('plasmac.y-offset', '{}'.format(str(hal.get_value('axis.y.eoffset-counts') + moveY)))
+            hal.set_p('plasmac.x-offset', '{}'.format(str(hal.get_value('plasmac.x-offset') + moveX)))
+            hal.set_p('plasmac.y-offset', '{}'.format(str(hal.get_value('plasmac.y-offset') + moveY)))
             hal.set_p('plasmac.cut-recovery', '1')
 
-    def cutrec_offset_changed(self):
+    def cutrec_offset_changed(self, xOffset, yOffset):
         if hal.get_value('plasmac.consumable-changing'):
             return
-        if self.xOffsetPin.get() > 0.001 * self.unitsPerMm or self.xOffsetPin.get() < -0.001 * self.unitsPerMm or \
-           self.yOffsetPin.get() > 0.001 * self.unitsPerMm or self.yOffsetPin.get() < -0.001 * self.unitsPerMm:
-            self.cutrec_motion_enable(False)
+        if xOffset > 0.001 * self.unitsPerMm or xOffset < -0.001 * self.unitsPerMm or \
+           yOffset > 0.001 * self.unitsPerMm or yOffset < -0.001 * self.unitsPerMm:
             self.w.cut_rec_cancel.setEnabled(True)
-            if self.cancelWait:
-                self.cutrec_buttons_enable(False)
+            if self.laserRecStatePin.get():
+                self.w.laser.setEnabled(False)
             if self.ccButton:
                 self.w[self.ccButton].setEnabled(False)
-        else:
+        elif not self.laserRecStatePin.get():
             self.cancelWait = False
-            self.cutrec_motion_enable(True)
             self.cutrec_buttons_enable(True)
+            self.cutrec_motion_enable(True)
             self.w.cut_rec_cancel.setEnabled(False)
             hal.set_p('plasmac.cut-recovery', '0')
-            if self.ccButton and STATUS.is_interp_paused():
-                self.w[self.ccButton].setEnabled(True)
+            hal.set_p('plasmac.x-offset', '0')
+            hal.set_p('plasmac.y-offset', '0')
+            self.laserOnPin.set(0)
+            if STATUS.is_interp_paused():
+                self.w.laser.setEnabled(True)
+                if self.ccButton:
+                    self.w[self.ccButton].setEnabled(True)
 
     def cutrec_cancel_pressed(self, state):
         if (state):
             if hal.get_value('plasmac.cut-recovery'):
                 self.cancelWait = True
                 hal.set_p('plasmac.cut-recovery', '0')
+                self.laserOnPin.set(0)
 
     def cutrec_motion_enable(self, state):
         for widget in ['fwd', 'rev', 'speed']:
@@ -5315,12 +5410,12 @@ class HandlerClass:
             msg0 = _translate('HandlerClass', 'Invalid number of colors defined')
             msg1 = _translate('HandlerClass', 'in custom stylesheet header')
             msg2 = _translate('HandlerClass', 'Reverting to standard stylesheet')
-            self.dialog_show_ok(QMessageBox.Warning, '{}'.format(head), '{}\n{}\n\n{}\n'.format(msg0, msg1, msg2))
+            self.dialog_show_ok(QMessageBox.Warning, '{}'.format(head), '\n{}\n{}\n\n{}\n'.format(msg0, msg1, msg2))
             self.standard_stylesheet()
         except:
             msg0 = _translate('HandlerClass', 'Cannot open custom stylesheet')
             msg1 = _translate('HandlerClass', 'Reverting to standard stylesheet')
-            self.dialog_show_ok(QMessageBox.Warning, '{}'.format(head), '{}\n\n{}\n'.format(msg0, msg1))
+            self.dialog_show_ok(QMessageBox.Warning, '{}'.format(head), '\n{}\n\n{}\n'.format(msg0, msg1))
             self.standard_stylesheet()
 
     def color_button_image(self, button, color):
@@ -5510,6 +5605,15 @@ class HandlerClass:
     def on_keycall_END(self, event, state, shift, cntrl):
         if self.key_is_valid(event, state) and not self.w.main_tab_widget.currentIndex() and self.w.touch_xy.isEnabled():
             self.touch_xy_clicked()
+
+    def on_keycall_DELETE(self, event, state, shift, cntrl):
+        if self.keyboard_shortcuts() and not self.w.main_tab_widget.currentIndex() and self.w.laser.isEnabled():
+            if state and not event.isAutoRepeat():
+                self.extLaserButton = True
+                self.laser_pressed()
+            else:
+                self.extLaserButton = False
+                self.laser_clicked()
 
     def on_keycall_ALTRETURN(self, event, state, shift, cntrl):
         if self.key_is_valid(event, state) and not cntrl and not shift and not self.w.main_tab_widget.currentIndex() and self.w.mdi_show.isEnabled():
