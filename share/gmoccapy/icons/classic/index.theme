@@ -2,12 +2,22 @@
 Name=classic
 Comment=Classic gmoccapy icon theme
 Inherits=hicolor
-Directories=24x24/actions,32x32/actions,48x48/actions,scalable/actions
+Directories=24x24/actions,24x24/emblems,24x24/status,32x32/actions,48x48/actions,48x48/apps,48x48/categories,48x48/devices,scalable/actions
 
 [24x24/actions]
 Size=24
 Type=Fixed
 Context=Actions
+
+[24x24/emblems]
+Size=24
+Context=Emblems
+Type=Fixed
+
+[24x24/status]
+Size=24
+Context=Status
+Type=Fixed
 
 [32x32/actions]
 Size=32
@@ -18,6 +28,21 @@ Context=Actions
 Size=48
 Type=Fixed
 Context=Actions
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Fixed
+
+[48x48/categories]
+Size=48
+Context=Categories
+Type=Fixed
+
+[48x48/devices]
+Size=48
+Context=Devices
+Type=Fixed
 
 [scalable/actions]
 Size=48
