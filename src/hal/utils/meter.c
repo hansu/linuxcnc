@@ -243,6 +243,13 @@ int main(int argc, gchar * argv[])
 	win_name = _("Hal Meter");
     }
 
+    /* set black font in inactive state */
+    const char css_data[] = "label:backdrop {color: black;}";
+    GtkCssProvider *cssProvider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(cssProvider, css_data, sizeof(css_data), NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+            GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
     /* create main window, set it's size, title, and lock the size */
     main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_widget_set_size_request(GTK_WIDGET(main_window), width, height);
