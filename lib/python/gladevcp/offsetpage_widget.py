@@ -23,6 +23,8 @@
 
 import sys, os, linuxcnc
 from hal_glib import GStat
+
+
 datadir = os.path.abspath(os.path.dirname(__file__))
 AXISLIST = ['offset', 'X', 'Y', 'Z', 'A', 'B', 'C', 'U', 'V', 'W', 'name']
 # we need to know if linuxcnc isn't running when using the GLADE editor
@@ -32,11 +34,15 @@ lncnc_running = False
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
+gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 from gi.repository import GLib
+
+import gladevcp.makepins
+from gladevcp.gladebuilder import GladeBuilder
 
 # localization
 import locale
@@ -77,6 +83,7 @@ class OffsetPage(Gtk.VBox):
 
     __gsignals__ = {
                     'selection_changed': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_STRING, GObject.TYPE_STRING,)),
+                    'editing-started': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_STRING, GObject.TYPE_STRING,)),
                    }
 
 
@@ -125,6 +132,8 @@ class OffsetPage(Gtk.VBox):
         zero_g92_button.connect('clicked', self.zero_g92)
         zero_rot_button = self.wTree.get_object("zero_rot_button")
         zero_rot_button.connect('clicked', self.zero_rot)
+        calc_button = self.wTree.get_object("calc_button")
+        calc_button.connect('clicked', self.open_calc)
         self.set_font(self.font)
         self.modelfilter.set_visible_column(10)
         self.buttonbox = self.wTree.get_object("buttonbox")
@@ -132,8 +141,10 @@ class OffsetPage(Gtk.VBox):
             if col > 9:break
             temp = self.wTree.get_object("cell_%s" % name)
             temp.connect('edited', self.col_editted, col)
+            temp.connect('editing-started', self.col_editing_started, col)
         temp = self.wTree.get_object("cell_name")
         temp.connect('edited', self.col_editted, 10)
+        temp.connect('editing-started', self.col_editing_started, 10)
         # reparent offsetpage box from Glades top level window to widgets VBox
         window = self.wTree.get_object("offsetpage_box")
         window.reparent(self)
@@ -314,6 +325,71 @@ class OffsetPage(Gtk.VBox):
             self.store[i][12] = self.convert_color(color)
         self.queue_draw()
 
+    # When cell is clicked for editing
+    def col_editing_started(self, widget, editable, filtered_path, col):
+        model, treeiter = self.view2.get_selection().get_selected()
+        # path = self.modelfilter.get_path(treeiter)
+        # (store_path,) = self.modelfilter.convert_path_to_child_path(path)
+        # row = store_path
+        # print("EDITED Start:", int(filtered_path), row, "axis:", col-1, model.get_value(treeiter, col))
+        print("EDITING started:", "axis:", col-1, model.get_value(treeiter, col))
+        # self.emit('editing-started', col-1, model.get_value(treeiter, col))
+        # self.col_editted(None, filtered_path, new_text, col):
+
+         # display calculator for input
+        value = self.launch_numerical_input('on_numerical_entry_return', model.get_value(treeiter, col), 0, "Edit offset")
+        print("value 2 ", value)
+       
+
+    def open_calc(self, widget):
+        print("open calc")
+        model, treeiter = self.view2.get_selection().get_selected()
+
+        #print("EDITING started:", "axis:", col-1, model.get_value(treeiter, col))
+        print(model, treeiter, self.view2, self.view2.get_selection())
+        value = self.launch_numerical_input('on_numerical_entry_return', -1, 2, "Edit offset")
+
+
+    def on_numerical_entry_return(self,widget,result,calc,userdata,userdata2):
+        """This is a default callback function from the launch_numerical_input dialog.
+            Requires a status bar called 'statusbar1' to display the answer
+        """
+        data = calc.get_value()
+        if result == Gtk.ResponseType.ACCEPT:
+            print ("Value ",data)
+            if data == None:
+                data = 0
+            # self.widgets.statusbar1.push(1,"Last Calculation: %f"%data)
+        widget.destroy()
+
+
+    def launch_numerical_input(self,callback="on_numerical_entry_return",data=None,data2=None,title="Entry dialog"):
+        """This is a function to launch a numerical entry/calculator dialog.
+            The default callback function will be 'on_numerical_entry_return.
+            It will check to see if the handler file has this function, otherwise it will use the default.
+        """
+        label = Gtk.Label("enter something")
+        label.modify_font(Pango.FontDescription("sans 20"))
+        entry_dialog = Gtk.Dialog(title,
+                   Gtk.Window(),
+                   0, destroy_with_parent = True)
+        calc = gladevcp.Calculator()
+        calc.set_editable(True)
+        entry_dialog.vbox.pack_start(label, False, False, 0)
+        entry_dialog.vbox.add(calc)
+        calc.set_value(data)
+        calc.set_property("font","sans 20")
+        calc.entry.connect("activate", lambda w : entry_dialog.emit('response',Gtk.ResponseType.ACCEPT))
+        entry_dialog.parse_geometry("400x400")
+        entry_dialog.connect("response", self[callback],calc,data,data2)
+        entry_dialog.show_all()
+        response = entry_dialog.run()
+        value = calc.get_value()
+        entry_dialog.destroy()
+        return value
+        # print("Value:", value)
+
+
     # When the column is edited this does the work
     # TODO the edited column does not end up showing the edited number even though linuxcnc
     # registered the change
@@ -324,7 +400,7 @@ class OffsetPage(Gtk.VBox):
         (store_path,) = self.modelfilter.convert_path_to_child_path(path)
         row = store_path
         axisnum = col - 1
-        # print "EDITED:", new_text, col, int(filtered_path), row, "axis num:", axisnum
+        # print("EDITED:", new_text, col, int(filtered_path), row, "axis num:", axisnum)
 
         def system_to_p(system):
             convert = { "G54":1, "G55":2, "G56":3, "G57":4, "G58":5, "G59":6, "G59.1":7, "G59.2":8, "G59.3":9}

@@ -1043,6 +1043,14 @@ class gmoccapy(object):
         self.widgets.hbtb_touch_off.pack_start(btn,True,True,0)
         btn.show()
 
+        self.calc_btn = self.widgets.offsetpage1.wTree.get_object("calc_button")
+        self.widgets.offsetpage1.buttonbox.remove(self.calc_btn)
+        self.calc_btn.connect("clicked", self.on_btn_calc_clicked)
+        self.calc_btn.set_property("tooltip-text", _("Press to adjust offset value"))
+        self.calc_btn.set_property("name", "calc_offsets")
+        self.widgets.hbtb_touch_off.pack_start(self.calc_btn,True,True,0)
+        self.calc_btn.show()
+
         if self.tool_measure_OK:
             btn = Gtk.Button.new_with_label(_(" Block\nHeight"))
             btn.connect("clicked", self.on_btn_block_height_clicked)
@@ -2230,6 +2238,22 @@ class gmoccapy(object):
             name = self.prefs.getpref(system_name, system, str)
             names.append([system, name])
         self.widgets.offsetpage1.set_names(names)
+    #     self.widgets.offsetpage1.connect('editing-started', self.editing_started)
+
+    # def editing_started(self, widget, axisnum, value):
+    #     print("offsetpage editing_started")
+
+    #     offset = self.dialogs.entry_dialog(self, data=value, header=_("Offset for axis {0}").format(axisnum),
+    #                                            label=_("Set Offset for axis {0} to:").format(axisnum), integer=False)
+    #     if offset == "CANCEL":
+    #         return
+    #     elif offset == "ERROR":
+    #         print(_("Conversion error in btn_set_value"))
+    #         self.dialogs.warning_dialog(self, _("Conversion error in btn_set_value!"),
+    #                                _("Please enter only numerical values. Values have not been applied"))
+    #     else:
+    #         print("new value:", offset)
+
 
     # Icon file selection stuff
     def _init_IconFileSelection(self):
@@ -4304,6 +4328,8 @@ class gmoccapy(object):
             self.widgets.ntb_info.set_size_request(-1, self.kbd_height)
             self.widgets.ntb_preview.set_current_page(1)
 
+        self.calc_btn.set_sensitive(True)
+
     def on_btn_zero_g92_clicked(self, widget, data=None):
         self.command.mode(linuxcnc.MODE_MDI)
         self.command.wait_complete()
@@ -4311,6 +4337,10 @@ class gmoccapy(object):
         self.command.mode(linuxcnc.MODE_MANUAL)
         self.command.wait_complete()
         self.widgets.btn_touch.emit("clicked")
+
+    def on_btn_calc_clicked(self, widget, data=None):
+        pass
+
 
     def _on_btn_set_value_clicked(self, widget, data=None):
         if not self.stat.task_state == linuxcnc.STATE_ON or not (self.all_homed or self.no_force_homing):
