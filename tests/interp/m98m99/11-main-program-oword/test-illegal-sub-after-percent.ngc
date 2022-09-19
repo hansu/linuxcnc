@@ -9,7 +9,7 @@ O2 call
 %
 (Nothing should follow % sign)
 
-(From http://linuxcnc.org/docs/html/gcode/overview.html#_overview    )
+(From http://linuxcnc.org/docs/2.9/html/gcode/overview.html#_overview    )
 (    The useful contents of a file demarcated by percents stop after )
 (    the second percent line. Anything after that is ignored.        )
 

@@ -44,7 +44,7 @@ acceleration and deceleration.
  names very much like those created by the motion component
  In nearly every case this is not the documentation page that you are
  looking for. See
- http://linuxcnc.org/docs/html/man/man9/motion.9.html instead.
+ http://linuxcnc.org/docs/2.9/html/man/man9/motion.9.html instead.
 
 It is designed for use with non-servo spindle drives that have separate 
 fwd/reverse inputs, such as DC drives and inverters.

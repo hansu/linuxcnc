@@ -211,7 +211,7 @@ Gscreen. All is done by GMOCCAPY automatically if you include a few lines in
 your INI file in the DISPLAY section.
 
 If you have never used a glade panel, I recommend to read the excellent documentation:
-http://www.linuxcnc.org/docs/html/gui/gladevcp.html[Glade VCP]
+http://www.linuxcnc.org/docs/2.9/html/gui/gladevcp.html[Glade VCP]
 
 .Embedded Tab Example
 

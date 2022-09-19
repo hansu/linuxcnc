@@ -31,7 +31,7 @@ have the names of the individual UARTS. (they need not be on the same card, or
 even the same bus).
 
 Read the documents on "halcompile" for help with writing realtime components:
-http://linuxcnc.org/docs/html/hal/comp.html""";
+http://linuxcnc.org/docs/2.9/html/hal/comp.html""";
 
 author "Andy Pugh andy@bodgesoc.org";
 license "GPL";

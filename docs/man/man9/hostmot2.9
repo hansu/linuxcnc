@@ -1208,7 +1208,7 @@ The BSPI (Buffered SPI) driver is unusual in that it does not create any HAL
 pins. Instead the driver exports a set of functions that can be used by a sub-driver
 for the attached hardware. Typically these would be written in the "comp"
 
-pre-processing language: see http://linuxcnc.org/docs/html/hal/comp.html or man
+pre-processing language: see http://linuxcnc.org/docs/2.9/html/hal/comp.html or man
 halcompile for further details. See man mesa_7i65 and the source of mesa_7i65.comp for
 details of a typical sub-driver.
 See man hm2_bspi_setup_chan, man hm2_bspi_write_chan, man hm2_tram_add_bspi_frame,
@@ -1223,7 +1223,7 @@ hm2_<board name>.<board index>.bspi.<index>, e.g., hm2_5i23.0.bspi.0.
 The UART driver also does not create any HAL pins, instead it declares two
 simple read/write functions and a setup function to be utilised by user-written
 code.  Typically this would be written in the "comp"
-pre-processing language: see http://linuxcnc.org/docs/html/hal/comp.html or man
+pre-processing language: see http://linuxcnc.org/docs/2.9/html/hal/comp.html or man
 halcompile for further details. See man mesa_uart and the source of mesa_uart.comp for
 details of a typical sub-driver.
 See man hm2_uart_setup_chan, man hm2_uart_send, man hm2_uart_read and man

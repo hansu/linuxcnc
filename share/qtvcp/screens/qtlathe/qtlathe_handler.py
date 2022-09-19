@@ -503,7 +503,7 @@ class HandlerClass:
 <img src="file://%s" alt="lcnc_swoop" />
 <hr />
 
-<a href="http://linuxcnc.org/docs/html/lathe/lathe-user.html">Lathe User Information link</a>
+<a href="http://linuxcnc.org/docs/2.9/html/lathe/lathe-user.html">Lathe User Information link</a>
 </body>
 </html>
 """ %(filename,os.path.join(self.PATH.IMAGEDIR,'lcnc_swoop.png'))
