@@ -24,7 +24,7 @@ new 2.8.0 version.  It assumes that you have an existing 2.7 install that you
 want to update.
 
 To upgrade LinuxCNC from a version older than 2.7, you have to first
-http://linuxcnc.org/docs/2.7/html/getting-started/updating-linuxcnc.html[upgrade your old install to 2.7],
+http://linuxcnc.org/docs/2.9/html/getting-started/updating-linuxcnc.html[upgrade your old install to 2.7],
 then follow these instructions to upgrade to the new version.
 
 If you do not have an old version of LinuxCNC to upgrade, then you're
