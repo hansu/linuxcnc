@@ -800,7 +800,7 @@ The Z auto touch-off is with a touch-off plate, the GladeVCP touch-off button
 and special HALUI commands to set the current user origin to zero and rapid
 clear.
 The serial modbus program is basically a blank template program that sets up
-ClassicLadder for serial modbus. See the << cha:classicladder,Classicladder Chapter >>
+ClassicLadder for serial modbus. See the <<cha:classicladder,Classicladder Chapter>>
 in the manual.
 
 .PnCconf, advanced options
