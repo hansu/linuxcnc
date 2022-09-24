@@ -52,3 +52,4 @@ p.table {
 	margin-top: 0;
 	margin-bottom: 0;
 }
+ul > li > a  { color: blue; }
