@@ -1,5 +1,6 @@
 :lang: en
 :toc:
+:relfileprefix: ../
 
 [[cha:linuxcnc-user-introduction]]
 = LinuxCNC User Introduction(((LinuxCNC User Introduction,User Introduction)))
@@ -102,19 +103,19 @@ AXIS:: <<cha:axis-gui,AXIS>>, the standard keyboard GUI interface.
 .AXIS, the standard keyboard GUI interface
 image::../gui/images/axis.png["AXIS, the standard keyboard GUI interface",align="center"]
 
-Touchy:: <<cha:touchy-gui,Touchy>>, a touch screens GUI:
+Touchy:: <<gui/touchy.adoc#cha:touchy-gui,Touchy>>, a touch screens GUI:
 
 [[fig:touchy-graphical-interface]]
 .Touchy, a touch screen GUI
 image::../gui/images/touchy.png["Touchy, a touch screen GUI",align="center"]
 
-Gscreen:: <<cha:gscreen,Gscreen>>, a user-configurable touch screen GUI:
+Gscreen:: <<gui/gscreen.adoc#cha:gscreen,Gscreen>>, a user-configurable touch screen GUI:
 
 [[fig:gscreen-graphical-interface]]
 .Gscreen, a configurable base touch screen GUI
 image::../gui/images/gscreen-mill.png["Gscreen, a configurable base touch screen GUI",align="center"]
 
-GMOCCAPY:: <<cha:gmoccapy,GMOCCAPY>>, a touch screen GUI based on Gscreen. GMOCCAPY is also designed to work equally
+GMOCCAPY:: <<gui/gmoccapy.adoc#cha:gmoccapy,GMOCCAPY>>, a touch screen GUI based on Gscreen. GMOCCAPY is also designed to work equally
   well in applications where a keyboard and mouse are the preferred methods of controlling the GUI:
 
 [[fig:gmoccapy-graphical-interface]]
@@ -129,7 +130,7 @@ NGCGUI:: <<cha:ngcgui,NGCGUI>>, a subroutine GUI that provides wizard-style prog
 .NGCGUI, a graphical interface integrated into AXIS
 image::../gui/images/ngcgui.png["NGCGUI, a graphical interface integrated into AXIS",align="center"]
 
-TkLinuxCNC:: <<sec:tklinuxcnc-intro,TkLinuxCNC>>, another interface based on Tcl/Tk.
+TkLinuxCNC:: <<gui/tklinuxcnc.adoc#sec:tklinuxcnc-intro,TkLinuxCNC>>, another interface based on Tcl/Tk.
   Once the most popular interface after AXIS.
 
 [[fig:tklinuxcnc-gui]]
