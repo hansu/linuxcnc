@@ -1,5 +1,6 @@
 :lang: en
 :toc:
+:source-highlighter: highlight.js
 
 [[cha:ini-configuration]]
 = INI Configuration(((INI Configuration)))
@@ -101,7 +102,7 @@ There must be no whitespace following the trailing backslash character.
 Section identifiers may not be extended to multiple lines.
 
 .Variable with Line extends Example
-[source,{ini}]
+[source,ini]
 ----
 APP = sim_pin \
 ini.0.max_acceleration \
@@ -128,7 +129,7 @@ Most sample configurations use custom sections and variables to put all of the s
 To add a custom variable to an existing LinuxCNC section, simply include the variable in that section.
 
 .Custom Variable Example, assigning the value 'LINEAR' to the variable 'TYPE', and the value '16000' to the variable 'SCALE'.
-[source,{ini}]
+[source,ini]
 ----
 [JOINT_0]
 TYPE = LINEAR
@@ -440,7 +441,7 @@ NOTE: The program file associated with an extension must have either the full pa
 
 It is also possible to specify an interpreter:
 
-[source,{ini}]
+[source,ini]
 ----
 PROGRAM_EXTENSION = .py Python Script
   py = python
