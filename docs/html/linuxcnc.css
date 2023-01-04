@@ -47,3 +47,11 @@ figcaption.title {
 dt.hdlist1 {
 	font-weight: normal;
 }
+
+code {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 1.1em;
+	color: rgb(87, 73, 177);
+	padding: 0;
+	margin: 0;
+  }
