@@ -61,7 +61,8 @@ Depends: ${misc:Depends},
          python3-serial,
          @MAIN_PACKAGE_NAME@ (= ${binary:Version}),
          udev,
-         @YAPPS_RUNTIME@
+         @YAPPS_RUNTIME@,
+         python3-opengl
 Section: devel
 Description: PC based motion controller for real-time Linux
  LinuxCNC is a fully-realised CNC machine controller that can interpret
