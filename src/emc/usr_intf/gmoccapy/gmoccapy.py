@@ -1769,7 +1769,11 @@ class gmoccapy(object):
 
         self.widgets.spc_feed.set_property("min", 0)
         self.widgets.spc_feed.set_property("max", self.feed_override_max * 100)
-        self.widgets.spc_feed.set_value(100)
+        if self.feed_override_max < 1.0:
+            # self.feed_override is initialized to 1, so lower this intitial value
+            self.feed_override = self.feed_override_max
+            self.command.feedrate(self.feed_override)
+        self.widgets.spc_feed.set_value(self.feed_override * 100)
 
         # the scales to apply to the count of the hardware mpg wheel, to avoid to much turning
         self.widgets.adj_scale_jog_vel.set_value(self.scale_jog_vel)
