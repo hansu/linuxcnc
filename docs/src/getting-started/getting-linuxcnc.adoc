@@ -20,22 +20,22 @@ Image.  This is a hybrid ISO filesystem image that can be written to a
 USB storage device or a DVD and used to boot a computer.  At boot time
 you will be given a choice of booting the "Live" system (to run LinuxCNC
 without making any permanent changes to your computer) or booting the
-Installer (to install LinuxCNC and its operating system onto your
+installer (to install LinuxCNC and its operating system onto your
 computer's hard drive).
+
+The outline of the process looks like this:
+
+. Download the Live/Install Image from https://www.linuxcnc.org/iso/.
+. Write your image to a USB storage device or DVD.
+. Boot the Live system to test out LinuxCNC if using the Live/Install image.
+. Boot the installer to install LinuxCNC.
 
 With the release of Debian Bookworm (Debian 12) on 10 June 2023, another option is to simply install Debian from the debian.org website and install linuxcnc-uspace from the Synaptic package manager or by simply opening a terminal window and typing:
 ----
 sudo apt install linuxcnc-uspace
 ----
 
-The outline of the process looks like this:
-
-. Download the Live/Install Image from linuxcnc.org or Download the Debian Bookworm image from  debian.org
-. Write your image to a USB storage device or DVD.
-. Boot the Live system to test out LinuxCNC if using The Live/Install image.
-. Boot the Installer to install LinuxCNC.
-
-If you choose use Debian Bookworm, some additional configuration may be required to make a more friendly environment. These steps will be covered in an seperate section later in this document. This section describes some methods for downloading the Live/Install Image.
+If you choose use Debian Bookworm, some additional configuration may be required to make a more friendly environment. These steps will be covered in the section <<sec:_bookworm_tweaks,Bookworm Tweaks>>. This section describes some methods for downloading the Live/Install Image.
 
 [[sec:_normal_download]]
 === Normal Download
@@ -48,15 +48,15 @@ For the Raspberry Pi a complete SD card image is available here:
 
 https://linuxcnc.org/iso/linuxcnc-2.8.1-pi4.zip FIX_ME
 
-Another alternative for the Raspberry Pi is to download the Debian Bookworm image from https://raspi.debian.net/tested-images/
+Another alternative for the Raspberry Pi is to download the Debian Bookworm image from https://raspi.debian.net/tested-images/ or https://www.raspberrypi.com/software/operating-systems/ (currently only Bullseye)
 
 This Pi image can  be installed using the normal Pi
 https://www.raspberrypi.org/documentation/installation/installing-images/README.md[install process]
-and using the Raspberry Pi Imager app. Note the Debian image will require additional configuration as by default it does not install a graphical environment and only presents a text based console. How to complete the installation will be covered in a later section of this document.
+and using the https://downloads.raspberrypi.org/imager/[Raspberry Pi Imager app]. Note the Debian image will require additional configuration as by default it does not install a graphical environment and only presents a text based console. How to complete the installation will be covered in a later section of this document.
 
 [[sec:_debian_download]]
 === Debian Download
-Simply got to the Debian Website at https://www.debian.org/ and click on the download button. Assuming  a x86 PC, choose the netinst CD version.
+Simply got to the Debian Website at https://www.debian.org/ and click on the download button. Assuming a x86 PC, choose the netinst CD version.
 
 === Write the image to a bootable device
 
@@ -97,7 +97,7 @@ installing it. You can not create custom configurations or modify most
 system settings in a Live session, but you can (and should) run the
 latency test.
 
-To try out LinuxCNC: from the Applications/CNC menu pick LinuxCNC. A
+To try out LinuxCNC from the Applications/CNC menu pick LinuxCNC. A
 dialog box will open from which you can choose one of many sample
 configurations. At this point it only really makes sense to pick a "sim"
 configuration. Some of the sample configurations include onscreen
@@ -109,7 +109,7 @@ run the Latency Test as shown <<sec:latency-test,here>>.
 At the time of writing the Live-Image is only available with the
 preempt-rt kernel and a matching LinuxCNC. On some hardware this might
 not offer good enough latency. There is an experimental version available
-using the RTAI realtime kernel which will often give better latency. RTAI is only supported on older versions of Debian. For further information about RTAI, refer to the documentation for Version 2.8 of Linuxcnc.
+using the RTAI realtime kernel which will often gives better latency. RTAI is only supported on older versions of Debian. For further information about RTAI, refer to the documentation for Version 2.8 of LinuxCNC.
 Modern hardware demands a modern operating system so RTAI may be a poor choice on modern hardware.
 
 == Installing LinuxCNC
@@ -120,7 +120,7 @@ bootup.
 == Updates to LinuxCNC(((Updates to LinuxCNC)))
 
 With the normal install from the live disk, the Update Manager will notify you of updates
-to LinuxCNC when you go on line and allow you to easily upgrade with no
+to LinuxCNC when you go online and allow you to easily upgrade with no
 Linux knowledge needed.
 It is OK to upgrade everything except the operating system when asked to.
 
@@ -130,9 +130,9 @@ If you have used the live image, Do not upgrade the operating system if prompted
 [[linuxcnc:install-problems]]
 == Install Problems(((LinuxCNC:Installation Problems)))(((Installation:Problems)))
 
-Most problems booting the installation image are due to uefi hardware. Fortunately, Debian Bookworm has significantly better support for uefi systems than earlier versions of Linux.
+Most problems booting the installation image are due to UEFI hardware. Fortunately, Debian Bookworm has significantly better support for UEFI systems than earlier versions of Linux.
 
-Sometimes you can tell the BIOS to boot legacy (non-uefi) hardware.
+Sometimes you can tell the BIOS to boot legacy (non-UEFI) hardware.
 
 In rare cases you might have to reset the BIOS to default settings if
 during the Live CD install it cannot recognize the hard drive
