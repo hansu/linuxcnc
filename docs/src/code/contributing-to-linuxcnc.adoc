@@ -248,6 +248,7 @@ revisions that are ahead of origin/master, so you can do things like
 `git format-patch` them to share with others without pushing to the
 central repository.
 
+[[sec:contributing-translations]]
 == Translations
 
 The LinuxCNC project uses `gettext` to translate the software into
@@ -265,7 +266,8 @@ https://docs.weblate.org/en/latest/user/basic.html
 
 If web services are not your thing, you can also work on translations
 using a variety of local gettext translator apps including gtranslator,
-poedit, and many more.
+poedit, and many more. But the recommend way is the usage of the
+Weblate web interface and it is mandatory for the master branch.
 
 == Other ways to contribute
 
