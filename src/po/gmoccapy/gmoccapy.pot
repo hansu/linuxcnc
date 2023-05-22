@@ -1757,3 +1757,11 @@ msgstr ""
 #: src/emc/usr_intf/gmoccapy/gmoccapy.glade.h:254
 msgid "home joints"
 msgstr ""
+
+# the following are added manually
+
+msgid "hide title bar"
+msgstr ""
+
+msgid "Enable sound"
+msgstr ""

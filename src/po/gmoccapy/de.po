@@ -3150,3 +3150,11 @@ msgstr "Referenziere Achsen"
 
 #~ msgid "setup button list"
 #~ msgstr "Setup Knopfleiste"
+
+# the following are added manually
+
+msgid "hide title bar"
+msgstr "Titelleiste ausblenden"
+
+msgid "Enable sound"
+msgstr "Sound aktivieren"
