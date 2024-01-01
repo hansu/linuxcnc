@@ -595,6 +595,10 @@ class GlCanonDraw:
             except OverflowError:
                 self.select_buffer_size *= 2
                 continue
+            except OpenGL.error.GLError as e:
+                if e.err == GL_STACK_OVERFLOW:
+                    self.select_buffer_size *= 2
+                continue
             break
 
         if buffer:
