@@ -1,0 +1,53 @@
+component demux4 "Forward the input signal to one of four outputs depending on the values of the selection inputs.";
+pin in bit sel0;
+pin in bit sel1 """\
+Together, these determine to which \\fBout\\fIN\\fR the \\fBin\\fR value is copied.
+""";
+pin in float in;
+pin out float out0 """\
+Follows the value of \\fBin\\fR when \\fBsel1=FALSE\\fR, \\fBsel0=FALSE\\fR
+""";
+pin out float out1 """\
+Follows the value of \\fBin\\fR when \\fBsel1=FALSE\\fR, \\fBsel0=TRUE\\fR
+""";
+pin out float out2 """\
+Follows the value of \\fBin\\fR when \\fBsel1=TRUE\\fR, \\fBsel0=FALSE\\fR
+""";
+pin out float out3 """\
+Follows the value of \\fBin\\fR when \\fBsel1=TRUE\\fR, \\fBsel0=TRUE\\fR
+.TP
+The inactice \\fBout\\fIN\\fR is always 0.
+""";
+function _;
+license "GPL";
+author "Hans Unzner";
+;;
+FUNCTION(_) {
+    if(sel1) {
+        if(sel0) {
+            out0 = 0;
+            out1 = 0;
+            out2 = 0;
+            out3 = in;
+        }
+        else {
+            out0 = 0;
+            out1 = 0;
+            out2 = in;
+            out3 = 0;
+        }
+    } else {
+        if(sel0) {
+            out0 = 0;
+            out1 = in;
+            out2 = 0;
+            out3 = 0;
+        }
+        else {
+            out0 = in;
+            out1 = 0;
+            out2 = 0;
+            out3 = 0;
+        }
+    }
+}
