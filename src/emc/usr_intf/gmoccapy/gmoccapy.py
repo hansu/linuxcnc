@@ -3615,11 +3615,11 @@ class gmoccapy(object):
         dro = self.dro_dic["Combi_DRO_{0}".format(joint)]
 
         if dro.machine_units == _MM:
-            self.widgets.lbl_tool_offset_z.set_text("{0:.3f}".format(self.halcomp["tooloffset-z"]))
-            self.widgets.lbl_tool_offset_x.set_text("{0:.3f}".format(self.halcomp["tooloffset-x"]))
+            format = "%.3f"
         else:
-            self.widgets.lbl_tool_offset_z.set_text("{0:.4f}".format(self.halcomp["tooloffset-z"]))
-            self.widgets.lbl_tool_offset_x.set_text("{0:.4f}".format(self.halcomp["tooloffset-x"]))
+            format = "%.4f"
+        self.widgets.lbl_tool_offset_z.set_text(locale.format_string(format, self.halcomp["tooloffset-z"]))
+        self.widgets.lbl_tool_offset_x.set_text(locale.format_string(format, self.halcomp["tooloffset-x"]))
 
     def on_offsetpage1_selection_changed(self, widget, system, name):
         if system not in self.system_list[1:] or self.touch_button_dic["edit_offsets"].get_active():
@@ -3973,12 +3973,12 @@ class gmoccapy(object):
         else:
             vc = 0
         if vc >= 100:
-            text = "Vc= {0:d}".format(int(vc))
+            format = "%d"
         elif vc >= 10:
-            text = "Vc= {0:2.1f}".format(vc)
+            format = "%.1f"
         else:
-            text = "Vc= {0:.2f}".format(vc)
-        self.widgets.lbl_vc.set_text(text)
+            format = "%.2f"
+        self.widgets.lbl_vc.set_text("Vc= " + locale.format_string(format, vc))
 
     def on_rbt_forward_clicked(self, widget, data=None):
         if widget.get_active():
