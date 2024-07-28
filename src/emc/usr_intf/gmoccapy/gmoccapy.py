@@ -1128,7 +1128,7 @@ class gmoccapy(object):
         for item in range(1, len(self.jog_increments)):
             name = "rbt_{0}".format(item)
             rbt = Gtk.RadioButton.new_from_widget(self.incr_rbt_dic["rbt_0"])
-            rbt.set_label(label = self.jog_increments[item])
+            rbt.set_label(label = locale.localize(self.jog_increments[item]))
             rbt.set_property("name",name)
             rbt.connect("pressed", self._jog_increment_changed)
             self.widgets.vbtb_jog_incr.pack_start(rbt, True, True, 0)
