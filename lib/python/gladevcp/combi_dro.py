@@ -32,6 +32,12 @@ import linuxcnc
 from hal_glib import GStat
 import re
 
+# localization
+import locale
+BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
+LOCALEDIR = os.path.join(BASE, "share", "locale")
+locale.setlocale(locale.LC_ALL, '')
+
 # constants
 _INCH = 0
 _MM = 1
@@ -43,7 +49,6 @@ _AXISLETTERS = ["X", "Y", "Z", "A", "B", "C", "U", "V", "W"]
 try:
     INIPATH = os.environ['INI_FILE_NAME']
 except:
-#    INIPATH = '/home/emcmesa/linuxcnc-dev/configs/sim/gmoccapy/gmoccapy.ini'
     pass
 
 # This is the main class
@@ -481,9 +486,9 @@ class Combi_DRO(Gtk.Box):
         main_dro = tmpl(main * scale)
         left_dro = tmpl(left * scale)
         right_dro = tmpl(right * scale)
-        self.widgets["main_dro"].set_label(main_dro)
-        self.widgets["dro_left"].set_label(left_dro)
-        self.widgets["dro_right"].set_label(right_dro)
+        self.widgets["main_dro"].set_label(locale.localize(main_dro))
+        self.widgets["dro_left"].set_label(locale.localize(left_dro))
+        self.widgets["dro_right"].set_label(locale.localize(right_dro))
         self.dtg = dtg * scale
         self.abs_pos = abs_pos * scale
         self.rel_pos = rel_pos * scale
