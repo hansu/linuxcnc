@@ -3514,7 +3514,7 @@ class gmoccapy(object):
             # toolinfo[15] = tool orientation
             # toolinfo[16] = tool info
             self.widgets.lbl_tool_no.set_text(str(toolinfo[1]))
-            self.widgets.lbl_tool_dia.set_text(toolinfo[12])
+            self.widgets.lbl_tool_dia.set_text(locale.delocalize(toolinfo[12]))
             self.halcomp["tool-diameter"] = float(locale.atof(toolinfo[12]))
             self.widgets.lbl_tool_name.set_text(toolinfo[16])
 
