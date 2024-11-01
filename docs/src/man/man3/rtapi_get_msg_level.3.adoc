@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_get_msg_level, rtapi_set_msg_level - Get or set the logging level
+rtapi_get_msg_level - Get or set the logging level
 
 == SYNTAX
 

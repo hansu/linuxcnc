@@ -4,10 +4,7 @@
 
 == NAME
 
-rtapi_module_param, EXPORT_FUNCTION, RTAPI_MP_INT, RTAPI_MP_LONG,
-RTAPI_MP_STRING, RTAPI_MP_ARRAY_INT, RTAPI_MP_ARRAY_LONG,
-RTAPI_MP_ARRAY_STRING, MODULE_LICENSE, MODULE_AUTHOR,
-MODULE_DESCRIPTION - Specifying module parameters
+rtapi_module_param - Specifying module parameters
 
 == SYNTAX
 

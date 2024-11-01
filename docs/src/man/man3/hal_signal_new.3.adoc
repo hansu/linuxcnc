@@ -4,7 +4,7 @@
 
 == NAME
 
-hal_signal_new, hal_signal_delete, hal_link, hal_unlink - Manipulate HAL
+hal_signal_new - Manipulate HAL
 signals
 
 == SYNTAX

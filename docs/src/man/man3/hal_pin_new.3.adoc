@@ -4,10 +4,7 @@
 
 == NAME
 
-hal_pin_new, hal_pin_bit_new, hal_pin_float_new, hal_pin_u32_new,
-hal_pin_s32_new, hal_pin_port_new, hal_pin_bit_newf,
-hal_pin_float_newf, hal_pin_u32_newf, hal_pin_s32_newf,
-hal_pin_port_newf - creates a HAL pin
+hal_pin_new - creates a HAL pin
 
 == SYNTAX
 

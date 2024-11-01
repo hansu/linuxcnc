@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_prio, rtapi_prio_highest, rtapi_prio_lowest, rtapi_prio_next_higher, rtapi_prio_next_lower - thread priority functions
+rtapi_prio - thread priority functions
 
 == SYNTAX
 

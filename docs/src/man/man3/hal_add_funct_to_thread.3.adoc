@@ -4,7 +4,7 @@
 
 == NAME
 
-hal_add_funct_to_thread, hal_del_funct_from_thread - cause a function to be executed at regular intervals
+hal_add_funct_to_thread - cause a function to be executed at regular intervals
 
 == SYNTAX
 

@@ -2,7 +2,9 @@
 
 == NAME
 
-kins, genhexkins, genserkins, maxkins, pentakins, pumakins, rotatekins, scarakins, tripodkins, trivkins - kinematics definitions for LinuxCNC
+kins - kinematics definitions for LinuxCNC
+
+// genhexkins, genserkins, maxkins, pentakins, pumakins, rotatekins, scarakins, tripodkins, trivkin
 
 == SYNOPSIS
 

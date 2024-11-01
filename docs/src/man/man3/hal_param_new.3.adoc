@@ -4,7 +4,9 @@
 
 == NAME
 
-hal_param_new, hal_param_bit_new, hal_param_float_new, hal_param_u32_new, hal_param_s32_new, hal_param_bit_newf, hal_param_float_newf, hal_param_u32_newf, hal_param_s32_newf - creates a HAL parameter
+hal_param_new - creates a HAL parameter
+
+//hal_param_bit_new, hal_param_float_new, hal_param_u32_new, hal_param_s32_new, hal_param_bit_newf, hal_param_float_newf, hal_param_u32_newf, hal_param_s32_newf
 
 == SYNTAX
 

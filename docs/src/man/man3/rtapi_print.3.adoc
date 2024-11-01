@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_print, rtapi_print_msg - print diagnostic messages
+rtapi_print - print diagnostic messages
 
 == SYNTAX
 
