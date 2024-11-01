@@ -1,8 +1,8 @@
-= millturn(1)
+= millturngui(1)
 
 == NAME
 
-millturn, millturngui - Vismach Virtual Machine GUI
+millturngui - Vismach Virtual Machine GUI
 
 == DESCRIPTION
 
