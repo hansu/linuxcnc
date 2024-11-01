@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_div_u64, rtapi_div_u64_rem, rtapi_div_s64, rtapi_div_s64_rem - unsigned division of a 64-bit number by a 32-bit number
+rtapi_div_u64 - unsigned division of a 64-bit number by a 32-bit number
 
 == SYNTAX
 

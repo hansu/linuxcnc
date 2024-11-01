@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_region, rtapi_request_region, rtapi_release_region - functions to manage I/O memory regions
+rtapi_region - functions to manage I/O memory regions
 
 == SYNTAX
 

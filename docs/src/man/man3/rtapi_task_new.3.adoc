@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_task_new, rtapi_task_delete - create a realtime task
+rtapi_task_new - create a realtime task
 
 == SYNTAX
 

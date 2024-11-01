@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_snprintf, rtapi_vsnprintf - Perform snprintf-like string formatting
+rtapi_snprintf - Perform snprintf-like string formatting
 
 == SYNTAX
 

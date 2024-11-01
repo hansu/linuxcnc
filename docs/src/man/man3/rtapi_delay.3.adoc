@@ -4,7 +4,7 @@
 
 == NAME
 
-rtapi_delay, rtapi_delay_max - Busy-loop for short delays
+rtapi_delay - Busy-loop for short delays
 
 == SYNTAX
 

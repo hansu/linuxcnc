@@ -4,7 +4,14 @@
 
 == NAME
 
+// hal_set_lock - Set or get the HAL lock level
 hal_set_lock, hal_get_lock - Set or get the HAL lock level
+
+// Problem: hal_get_lock.3 is generated like:
+// .so hal_set_lock.3
+// but need to be:
+// .so man3/hal_set_lock.3
+
 
 == SYNTAX
 

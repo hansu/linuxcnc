@@ -4,7 +4,8 @@
 
 == NAME
 
-hal_type_t, hal_bool, hal_bit_t, hal_s32_t, hal_u32_t, hal_port_t, hal_float_t, real_t, ireal_t - typedefs for HAL datatypes
+hal_type_t - typedefs for HAL datatypes
+//hal_bool, hal_bit_t, hal_s32_t, hal_u32_t, hal_port_t, hal_float_t, real_t, ireal_t 
 
 == DESCRIPTION
 
