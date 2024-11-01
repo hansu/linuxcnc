@@ -2,7 +2,7 @@
 
 == NAME
 
-motion, axis - accepts NML motion commands, interacts with HAL in realtime
+motion - accepts NML motion commands, interacts with HAL in realtime
 
 == SYNOPSIS
 
