@@ -64,7 +64,7 @@ man1/mdro.1
 man1/melfagui.1
 man1/milltask.1
 man1/millturn.1
-man1/millturngui.1
+#man1/millturngui.1
 man1/mitsub_vfd.1
 man1/modcompile.1
 man1/monitor-xhc-hb04.1
