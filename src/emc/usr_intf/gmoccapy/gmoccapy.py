@@ -582,8 +582,11 @@ class gmoccapy(object):
         self.scale_rapid_override = self.prefs.getpref("scale_rapid_override", 1, float)
 
         # the velocity settings
-        self.min_spindle_rev = self.prefs.getpref("spindle_bar_min", 0.0, float)
-        self.max_spindle_rev = self.prefs.getpref("spindle_bar_max", 6000.0, float)
+        # if there is a INI Entry for default, min and max spindle speed, we will use that one as default
+        # but if there is a setting in our preference file, that one will ignore the INI entry
+        self.spindle_start_rpm = self.prefs.getpref( 'spindle_start_rpm', self.INI.DEFAULT_SPINDLE_0_SPEED, float )
+        self.min_spindle_rev = self.prefs.getpref("spindle_bar_min", self.INI.MIN_SPINDLE_0_SPEED, float)
+        self.max_spindle_rev = self.prefs.getpref("spindle_bar_max", self.INI.MAX_SPINDLE_0_SPEED, float)
 
         self.turtle_jog_factor = self.prefs.getpref('turtle_jog_factor', 20, int)
         self.hide_turtle_jog_button = self.prefs.getpref("hide_turtle_jog_button", False, bool)
@@ -592,10 +595,6 @@ class gmoccapy(object):
 
         self.toggle_readout = self.prefs.getpref("toggle_readout", True, bool)
 
-        # if there is a INI Entry for default spindle speed, we will use that one as default
-        # but if there is a setting in our preference file, that one will beet the INI entry
-        default_spindle_speed = self.INI.DEFAULT_SPINDLE_0_SPEED
-        self.spindle_start_rpm = self.prefs.getpref( 'spindle_start_rpm', default_spindle_speed, float )
 
         self.kbd_height = self.prefs.getpref("kbd_height", 250, int)
         self.kbd_width = self.prefs.getpref("kbd_width", 880, int)
