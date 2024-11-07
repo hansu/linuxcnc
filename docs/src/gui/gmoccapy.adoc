@@ -110,9 +110,11 @@ So let us take a closer look at the INI file and what you need to include to use
 DISPLAY = gmoccapy
 PREFERENCE_FILE_PATH = gmoccapy_preferences
 MAX_FEED_OVERRIDE = 1.5
-MAX_SPINDLE_OVERRIDE = 1.2
-MIN_SPINDLE_OVERRIDE = 0.5
-DEFAULT_SPINDLE_SPEED = 500
+MAX_SPINDLE_0_OVERRIDE = 1.2
+MIN_SPINDLE_0_OVERRIDE = 0.5
+DEFAULT_SPINDLE_0_SPEED = 500
+MIN_SPINDLE_0_SPEED     = 0
+MAX_SPINDLE_0_SPEED     = 3000
 LATHE = 1
 BACK_TOOL_LATHE = 1
 PROGRAM_PREFIX = ../../nc_files/
@@ -135,7 +137,7 @@ If you only want to use one file for several machines, you need to include `PREF
 [NOTE]
 If no value is given, it will be set to 1.0.
 
-- _MIN_SPINDLE_OVERRIDE = 0.5_ and _MAX_SPINDLE_OVERRIDE = 1.2_ - Will allow you to change the spindle override within a limit from 50% to 120%.
+- _MIN_SPINDLE_0_OVERRIDE = 0.5_ and _MAX_SPINDLE_0_OVERRIDE = 1.2_ - Will allow you to change the spindle override within a limit from 50% to 120%.
 +
 [NOTE]
 If no values are given, MIN will be set to 0.1 and MAX to 1.0.
@@ -154,7 +156,9 @@ See also the <<gmoccapy:lathe-section,Lathe Specific Section>>.
 If not specified, GMOCCAPY will look in the following order for NGC files:
 First `linuxcnc/nc_files` and then the users home directory.
 
-- _DEFAULT_SPINDLE_SPEED_ - Start value for <<gmoccapy-settings-spindle,"Starting RPM">> if value not present in preferences file or file is not present. Will have no effect with valid preferences file.
+- _DEFAULT_SPINDLE_0_SPEED_ - Start value for <<gmoccapy-settings-spindle,"Starting RPM">> if value not present in preferences file or file is not present. Will have no effect with valid preferences file.
+- _MIN_SPINDLE_0_SPEED_ - Start value for <<gmoccapy-settings-spindle,"Spindle bar min">>
+- _MAX_SPINDLE_0_SPEED_ - Start value for <<gmoccapy-settings-spindle,"Spindle bar max">>
 
 - _MIN_ANGULAR_VELOCITY_ - Sets the minimal jog velocity of the machine for rotary axes.
 - _MAX_ANGULAR_VELOCITY_ - Sets the maximal jog velocity of the machine for rotary axes.
@@ -499,9 +503,10 @@ DISPLAY = gmoccapy <log_level_param>
 using these parameters:
 ----
 Log level   <log_level_param>
+VERBOSE     -v
 DEBUG       -d
 INFO        -i
-VERBOSE     -v
+WARNING     -w
 ERROR       -q
 ----
 
