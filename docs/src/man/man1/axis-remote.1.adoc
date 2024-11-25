@@ -12,7 +12,7 @@ axis-remote - AXIS Remote Interface
 
 *axis-remote* is a small script that triggers commands in a running AXIS GUI.
 
-Use *axis-remote --help* for further information.::
+Use *axis-remote --help* for further information.
 
 == OPTIONS
 

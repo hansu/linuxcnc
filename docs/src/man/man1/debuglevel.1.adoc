@@ -15,7 +15,7 @@ of some parts of LinuxCNC.
 
 == SEE ALSO
 
-halcmd(1) - debug subcommand linuxcnc(1)*
+halcmd(1) - debug subcommand *linuxcnc(1)*
 
 Much more information about LinuxCNC and HAL is available in the
 LinuxCNC and HAL User Manuals, found at /usr/share/doc/LinuxCNC/.
