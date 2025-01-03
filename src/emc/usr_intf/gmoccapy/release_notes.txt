@@ -1,3 +1,17 @@
+ver 3.5.0 -- LinuxCNC 2.10.0-pre0
+
+ - Add margin to combi DRO
+ - correct direction of pin "gmoccapy.toolchange-changed" in sample configs and doc
+ - proper order of boxes in hbox_main_info
+ - increase limit of min and default spindle speed
+ - disable SourceView only in auto mode and only when running (mainly to not hide the progressbar)
+ - add progressbar for program progress
+ - some alternative buttons for "back to app"
+ - change "select file" button
+ - tune spindle-stop button image
+ - wip: some spelling fixes for gmoccapy macros
+ - keep offsetpage open after editing
+
 ver 3.4.8
  - re-ordered settings pages to have all appearance-related on one page
  - add configuration for 800x600 screens
