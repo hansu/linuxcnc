@@ -1,8 +1,18 @@
-ver 3.5.0
- - version for 2.10 (master) branche
+ver 3.5.0 -- LinuxCNC 2.10.0-pre0
+
+ - Read angular values from INI file only if angular joints are present
+ - Add margin to combi DRO
+ - correct direction of pin "gmoccapy.toolchange-changed" in sample configs and doc
+ - proper order of boxes in hbox_main_info (for embedding VCPs)
+ - increase limit of min and default spindle speed
+ - add progressbar for program progress
+ - some alternative buttons for "back to app"
+ - icon changes for buttons "select file", "spindle-stop"
+ - keep offsetpage open after editing
+
  - removed internal AUTOMATIC_G43 function, it is recommended to add
    the M6/M61 remap with the G43 command to the INI configuration.
-   Internal AUTOMATIC_G43 caused bugs in some configurations and situations.
+   Internal AUTOMATIC_G43 caused bugs in some configurations and situations. (#3113, thanks zz912)
 
 ver 3.4.9
 - Fix problems with duplicated entries in the preferences file
