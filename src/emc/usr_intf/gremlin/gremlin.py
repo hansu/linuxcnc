@@ -520,6 +520,7 @@ class Gremlin(Gtk.DrawingArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
             self.recordMouse(event.x, event.y)
 
     def motion(self, widget, event):
+        print(f"motion, x: {event.x}, y: {event.y}")
         if not self.use_default_controls:return
         button1 = event.state & Gdk.ModifierType.BUTTON1_MASK
         button2 = event.state & Gdk.ModifierType.BUTTON2_MASK
