@@ -401,6 +401,8 @@ class gmoccapy(object):
         self.widgets["rbt_view_{0}".format(view)].set_active(True)
         self.widgets.gremlin.set_property("view", view)
 
+        hal_glib.GStat().connect("graphics-gcode-properties", self.on_gcode_properties)
+
         # get if run from line should be used
         rfl = self.prefs.getpref("run_from_line", "no_run", str)
         # and set the corresponding button active
@@ -3986,6 +3988,35 @@ class gmoccapy(object):
         else:
             text = "Vc= {0:.2f}".format(vc)
         self.widgets.lbl_vc.set_text(text)
+        
+    def seconds_to_hms(self, seconds, hours = False):
+        seconds = int(seconds)
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        if hours < 1:
+            return f"{minutes:02}:{seconds:02} min"
+        else:
+            return f"{hours:02}:{minutes:02}:{seconds:02} h"
+
+    def parse_time(self, time_string):
+        if "Minutes" in time_string:
+            return self.seconds_to_hms(float(time_string.split("Minutes")[0])*60)
+        elif "Seconds" in time_string:
+            return self.seconds_to_hms(time_string.split("Seconds")[0])
+        else:
+            return ""
+        
+    def on_gcode_properties(self, widget, data):
+        # print("G-code properties:", data)
+        self.widgets.lbl_gcode_size.set_text(data['size'])
+        self.widgets.lbl_gcode_g0.set_text(data['g0'])
+        self.widgets.lbl_gcode_g1.set_text(data['g1'])
+        self.widgets.lbl_gcode_run.set_text(f"{data['run']}\n{self.parse_time(data['run'])}")
+        # self.widgets.lbl_gcode_toollist.set_text(data['toollist'])
+        self.widgets.lbl_gcode_x.set_text(data['x'])
+        self.widgets.lbl_gcode_y.set_text(data['y'])
+        self.widgets.lbl_gcode_z.set_text(data['z'])
 
     def on_rbt_forward_clicked(self, widget, data=None):
         if widget.get_active():
