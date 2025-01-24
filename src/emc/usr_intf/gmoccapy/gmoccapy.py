@@ -2563,11 +2563,10 @@ class gmoccapy(object):
         # this test is only necessary, because of remap and toolchange, it will emit a file loaded signal
         if self.halcomp["program.length"] > 0:
             self.halcomp["program.progress"] = 100.00 * line / self.halcomp["program.length"]
-            self.widgets.progressbar_pgm.set_fraction(line / self.halcomp["program.length"])
         else:
             self.halcomp["program.progress"] = 0.0
-            # print("Progress = {0:.2f} %".format(100.00 * line / self.halcomp["program.length"]))
-            self.widgets.progressbar_pgm.set_fraction(0)
+
+        self.widgets.progressbar_pgm.set_fraction(self.halcomp["program.progress"] / 100)
 
     def on_hal_status_interp_idle(self, widget):
         LOG.debug("IDLE")
