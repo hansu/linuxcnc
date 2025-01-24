@@ -1768,13 +1768,28 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkProgressBar" id="progressbar_pgm">
+                                      <object class="GtkOverlay" id="overlay_progressbar">
                                         <property name="visible">True</property>
                                         <property name="can-focus">False</property>
-                                        <property name="margin-start">10</property>
-                                        <property name="margin-end">10</property>
-                                        <property name="margin-bottom">5</property>
-                                        <property name="show-text">True</property>
+                                        <child>
+                                          <object class="GtkProgressBar" id="progressbar_pgm">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="margin-start">10</property>
+                                            <property name="margin-end">10</property>
+                                            <property name="margin-bottom">5</property>
+                                          </object>
+                                          <packing>
+                                            <property name="index">-1</property>
+                                          </packing>
+                                        </child>
+                                        <child type="overlay">
+                                          <object class="GtkLabel" id="lbl_progress">
+                                            <property name="visible">True</property>
+                                            <property name="can-focus">False</property>
+                                            <property name="label" translatable="yes">45 % (02:05 min)</property>
+                                          </object>
+                                        </child>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>

@@ -152,7 +152,11 @@ class gmoccapy(object):
                 background: rgba(0,0,0,1);
             }
             progress, trough {
-                min-height: 5px;
+                min-height: 20px;
+            }
+            progressbar {
+                min-height: 0px;
+                margin-top: 5px;
             }
         """
         screen = Gdk.Screen.get_default()
@@ -2567,6 +2571,7 @@ class gmoccapy(object):
             self.halcomp["program.progress"] = 0.0
 
         self.widgets.progressbar_pgm.set_fraction(self.halcomp["program.progress"] / 100)
+        self.widgets.progressbar_pgm.set_text(f"{self.halcomp['program.progress']:.0f} % (<running time>)")
 
     def on_hal_status_interp_idle(self, widget):
         LOG.debug("IDLE")
