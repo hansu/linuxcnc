@@ -479,6 +479,8 @@ class gmoccapy(object):
         cycle_time = self.get_ini_info.get_cycle_time()
         GLib.timeout_add( cycle_time, self._periodic )  # time between calls to the function, in milliseconds
 
+        self._startup_message()
+
         # This allows sourcing an user defined file
         rcfile = "~/.gmoccapyrc"
         user_command_file = self.get_ini_info.get_user_command_file()
@@ -515,7 +517,22 @@ class gmoccapy(object):
                 self.notification.add_message(_("Error in") + " " + css_file + "\n" \
                     + _("Please check the console output."), ALERT_ICON)
 
+    def _startup_message(self):
+        title = _("Important change(s)")
+        messages =[ _("Gmoccapy does no longer automatically retain G43 after a toolchange!\n"\
+                    "Automatic reactivation of G43 is possible using a REMAP.\n"\
+                    "An example can be found in any Gmoccapy SIM configuration."),
+                    _("new feature 1")]
+            
+        first_message = self.prefs.getpref("hide_startup_messsage", 0, int)
+        if first_message < len(messages):
+            message = ""
+            for item in messages[first_message:]:
+                message += "- " + item + "\n"
 
+            dont_show = self.dialogs.show_user_message(self, message, title, checkbox = True)
+            if dont_show:
+                self.prefs.putpref("hide_startup_messsage", len(messages), str)
 
     def _get_ini_data(self):
         self.get_ini_info = getiniinfo.GetIniInfo()
