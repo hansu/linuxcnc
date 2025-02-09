@@ -519,16 +519,15 @@ class gmoccapy(object):
 
     def _startup_message(self):
         title = _("Important change(s)")
-        messages =[ _("Gmoccapy does no longer automatically retain G43 after a toolchange!\n"\
+        messages =[ _("<b>3.5.0 (LinuxCNC 2.10.0): Gmoccapy does no longer automatically retain G43 after a toolchange!</b>\n"\
                     "Automatic reactivation of G43 is possible using a REMAP.\n"\
                     "An example can be found in any Gmoccapy SIM configuration."),
-                    _("new feature 1")]
-            
-        first_message = self.prefs.getpref("hide_startup_messsage", 0, int)
-        if first_message < len(messages):
-            message = ""
-            for item in messages[first_message:]:
-                message += "- " + item + "\n"
+                    _("<b>3.5.1 (LinuxCNC 2.10.1): </b> New feature 1"),
+                    ]
+        hide_message = self.prefs.getpref("hide_startup_messsage", 0, int)
+        if hide_message < len(messages):
+            message = "\n\n".join(messages[hide_message:])
+            message += _('\n\nFor more information see the <a href="https://linuxcnc.org/docs/html/gui/gmoccapy_release_notes.txt">release notes</a>.')
 
             dont_show = self.dialogs.show_user_message(self, message, title, checkbox = True)
             if dont_show:
