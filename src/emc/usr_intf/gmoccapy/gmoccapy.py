@@ -5896,6 +5896,9 @@ class gmoccapy(object):
             self.widgets.tbtn_switch_mode.set_label(_("World\nmode"))
             self._set_motion_mode(1)
             
+    def on_tbtn_sort_toggled(self, widget, data=None):
+        
+        
     def on_tbtn_split_view_toggled(self, widget, data=None):
         if widget.get_active():
             self.widgets.ntb_preview.show()
