@@ -81,7 +81,7 @@ class IconFileSelection(Gtk.Box):
                         "~", GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
            'filetypes' : (GObject.TYPE_STRING, 'file filter', 'Sets the filter for the file types to be shown',
                         "ngc,py", GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
-           'sortorder' : (GObject.TYPE_INT, 'sorting order', '0 = ASCENDING, 1 = DESCENDING", 2 = FOLDERFIRST, 3 = FILEFIRST',
+           'sortorder' : (GObject.TYPE_INT, 'sorting order', '0 = ASCENDING, 1 = DESCENDING, 2 = FOLDERFIRST, 3 = FILEFIRST',
                         0, 3, 2, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
                       }
     __gproperties = __gproperties__
@@ -106,6 +106,7 @@ class IconFileSelection(Gtk.Box):
         self.jump_to_dir = os.path.expanduser('/tmp')
         self.filetypes = ("ngc,py")
         self.sortorder = _FOLDERFIRST
+        self.sortorder = _ASCENDING
         # This will hold the path we will return
         self.path = ""
         self.button_state = {}
@@ -306,7 +307,7 @@ class IconFileSelection(Gtk.Box):
                 if os.path.isdir(os.path.join(self.cur_dir, fl)):
                     try:
                         os.listdir(os.path.join(self.cur_dir, fl))
-                        dirs.append(fl)
+                        dirs.append((fl, os.path.getmtime(os.path.join(self.cur_dir, fl))))
                         number += 1
                     except OSError:
                         #print ("no rights for ", os.path.join(self.cur_dir, fl), " skip that dir")
@@ -314,11 +315,8 @@ class IconFileSelection(Gtk.Box):
                 else:
                     try:
                         name, ext = fl.rsplit(".", 1)
-                        if "*" in self.filetypes:
-                            files.append(fl)
-                            number += 1
-                        elif ext in self.filetypes:
-                            files.append(fl)
+                        if "*" in self.filetypes or ext in self.filetypes:
+                            files.append((fl, os.path.getmtime(os.path.join(self.cur_dir, fl))))
                             number += 1
                     except ValueError as e:
                         LOG.debug("Tried to split filename without extension ({0}).".format(e))
@@ -330,30 +328,33 @@ class IconFileSelection(Gtk.Box):
                 self.sortorder = _FOLDERFIRST
 
             if self.sortorder == _ASCENDING or self.sortorder == _DESCENDING:
-                allobjects = dirs
-                allobjects.extend(files)
-                allobjects.sort(reverse = not self.sortorder == _ASCENDING)
+                print("HERE ")
+                print("DIRS:", dirs)
+                print("FILES:", files)
+                allobjects = [dirs, files]
+                allobjects.sort(key = lambda x: x[1], reverse = not self.sortorder == _ASCENDING)
 
                 for obj in allobjects:
+                    print("OBJ", obj)
                     if os.path.isdir(os.path.join(self.cur_dir, obj)):
                         self.store.append([obj, self.dirIcon, True])
                     else:
                         icon = self._get_icon(obj)
                         self.store.append([obj, icon, False])
 
-            dirs.sort(key = None, reverse = False)
-            files.sort(key = None, reverse = False)
+            dirs.sort(key = lambda x: x[1], reverse = True)
+            files.sort(key = lambda x: x[1], reverse = True)
             if self.sortorder == _FOLDERFIRST:
-                for dir in dirs:
+                for dir, date in dirs:
                     self.store.append([dir, self.dirIcon, True])
-                for file in files:
+                for file, date in files:
                     icon = self._get_icon(file)
                     self.store.append([file, icon, False])
             elif self.sortorder == _FILEFIRST:
-                for file in files:
+                for file, date in files:
                     icon = self._get_icon(file)
                     self.store.append([file, icon, False])
-                for dir in dirs:
+                for dir, date in dirs:
                     self.store.append([dir, self.dirIcon, True])
         except Exception as e:
             LOG.exception(e)
