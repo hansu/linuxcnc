@@ -6,15 +6,11 @@ halcompile - Build, compile and install LinuxCNC HAL components
 
 == SYNOPSIS
 
-____
 *halcompile* [*--compile*|*--preprocess*|*--document*|*--adoc*|*--view-doc*] compfile...
-____
 
 _sudo_ *halcompile* [*--install*|*--install-doc*] compfile...
 
-____
 *halcompile* *--compile* *--userspace* cfile...
-____
 
 _sudo_ *halcompile* *--install* *--userspace* cfile...
 
