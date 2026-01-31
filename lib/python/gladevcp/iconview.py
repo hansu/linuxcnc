@@ -100,13 +100,12 @@ class IconFileSelection(Gtk.Box):
 
         # set some default values'
         self.icon_size = 48
-        self.start_dir = os.path.expanduser('/')
+        self.start_dir = None
         self.cur_dir = self.start_dir
         self.user_dir = os.path.expanduser('~')
         self.jump_to_dir = os.path.expanduser('/tmp')
         self.filetypes = ("ngc,py")
         self.sortorder = _FOLDERFIRST
-        self.sortorder = _ASCENDING
         # This will hold the path we will return
         self.path = ""
         self.button_state = {}
@@ -304,6 +303,8 @@ class IconFileSelection(Gtk.Box):
                 # we don't want to add hidden files
                 if fl[0] == '.':
                     continue
+                # print("File (fl):", fl)
+                # append files with date
                 if os.path.isdir(os.path.join(self.cur_dir, fl)):
                     try:
                         os.listdir(os.path.join(self.cur_dir, fl))
@@ -312,6 +313,7 @@ class IconFileSelection(Gtk.Box):
                     except OSError:
                         #print ("no rights for ", os.path.join(self.cur_dir, fl), " skip that dir")
                         continue
+                # append dirs with date
                 else:
                     try:
                         name, ext = fl.rsplit(".", 1)
@@ -327,20 +329,19 @@ class IconFileSelection(Gtk.Box):
             if self.sortorder not in [_ASCENDING, _DESCENDING, _FOLDERFIRST, _FILEFIRST]:
                 self.sortorder = _FOLDERFIRST
 
+            print("sortorder", self.sortorder)
+            # A. ascending/descending (file/folder mixed)
             if self.sortorder == _ASCENDING or self.sortorder == _DESCENDING:
-                print("HERE ")
-                print("DIRS:", dirs)
-                print("FILES:", files)
                 allobjects = dirs + files
                 allobjects.sort(key = lambda x: x[1], reverse = not self.sortorder == _ASCENDING)
                 for obj, date in allobjects:
-                    print("OBJ, date:", obj, date)
                     if os.path.isdir(os.path.join(self.cur_dir, obj)):
                         self.store.append([obj, self.dirIcon, True])
                     else:
                         icon = self._get_icon(obj)
                         self.store.append([obj, icon, False])
-
+            # ELSE:
+            # B. sort folder first + fixed sorting by date (TEST ONLY)
             dirs.sort(key = lambda x: x[1], reverse = True)
             files.sort(key = lambda x: x[1], reverse = True)
             if self.sortorder == _FOLDERFIRST:
