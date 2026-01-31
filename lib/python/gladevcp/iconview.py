@@ -319,7 +319,7 @@ class IconFileSelection(Gtk.Box):
                             files.append((fl, os.path.getmtime(os.path.join(self.cur_dir, fl))))
                             number += 1
                     except ValueError as e:
-                        LOG.debug("Tried to split filename without extension ({0}).".format(e))
+                        LOG.debug(f"Tried to split filename ({name}) without extension ({e}).")
                     except Exception as e:
                         LOG.exception(e)
                         pass
@@ -331,11 +331,10 @@ class IconFileSelection(Gtk.Box):
                 print("HERE ")
                 print("DIRS:", dirs)
                 print("FILES:", files)
-                allobjects = [dirs, files]
+                allobjects = dirs + files
                 allobjects.sort(key = lambda x: x[1], reverse = not self.sortorder == _ASCENDING)
-
-                for obj in allobjects:
-                    print("OBJ", obj)
+                for obj, date in allobjects:
+                    print("OBJ, date:", obj, date)
                     if os.path.isdir(os.path.join(self.cur_dir, obj)):
                         self.store.append([obj, self.dirIcon, True])
                     else:

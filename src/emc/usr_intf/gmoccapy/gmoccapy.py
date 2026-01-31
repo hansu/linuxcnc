@@ -5897,6 +5897,7 @@ class gmoccapy(object):
             self._set_motion_mode(1)
             
     def on_tbtn_sort_toggled(self, widget, data=None):
+        pass
         
         
     def on_tbtn_split_view_toggled(self, widget, data=None):
