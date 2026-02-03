@@ -2487,7 +2487,11 @@ class gmoccapy(object):
         # _DESCENDING = 1
         # _FOLDERFIRST = 2
         # _FILEFIRST = 3
-        self.widgets.IconFileSelection1.set_property("sortorder", 0)
+        self.widgets.IconFileSelection1.set_property("sortorder", 2)
+        # _DATE_NONE = 0
+        # _DATE_ALL = 1
+        # _DATE_FILESONLY = 2
+        self.widgets.IconFileSelection1.set_property("sortbydate", 2)
 
         jump_to_dir = self.prefs.getpref("jump_to_dir", os.path.expanduser("~"), str)
         self.widgets.jump_to_dir_chooser.set_current_folder(jump_to_dir)
