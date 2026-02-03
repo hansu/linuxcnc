@@ -2492,6 +2492,9 @@ class gmoccapy(object):
         # _DATE_ALL = 1
         # _DATE_FILESONLY = 2
         self.widgets.IconFileSelection1.set_property("sortbydate", 2)
+        
+        self.sort_by_date = self.prefs.getpref("sort_by_date", False, bool)
+        self.widgets.tbtn_sort.set_active(self.sort_by_date)
 
         jump_to_dir = self.prefs.getpref("jump_to_dir", os.path.expanduser("~"), str)
         self.widgets.jump_to_dir_chooser.set_current_folder(jump_to_dir)
@@ -5906,8 +5909,16 @@ class gmoccapy(object):
             self._set_motion_mode(1)
             
     def on_tbtn_sort_toggled(self, widget, data=None):
-        pass
+        if widget.get_active():
+            # _DATE_NONE = 0
+            # _DATE_ALL = 1
+            # _DATE_FILESONLY = 2
+            self.widgets.IconFileSelection1.set_property("sortbydate", 2)
+        else:
+            self.widgets.IconFileSelection1.set_property("sortbydate", 0)
         
+        self.sort_by_date = widget.get_active()
+        self.prefs.putpref("sort_by_date", self.sort_by_date)
         
     def on_tbtn_split_view_toggled(self, widget, data=None):
         if widget.get_active():

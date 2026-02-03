@@ -7974,6 +7974,7 @@ date</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Sort files by date, newest first</property>
+                    <signal name="toggled" handler="on_tbtn_sort_toggled" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
