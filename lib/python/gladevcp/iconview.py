@@ -106,6 +106,7 @@ class IconFileSelection(Gtk.Box):
         self.jump_to_dir = os.path.expanduser('/tmp')
         self.filetypes = ("ngc,py")
         self.sortorder = _FOLDERFIRST
+        self.sort_by_date = True
         # This will hold the path we will return
         self.path = ""
         self.button_state = {}
@@ -303,7 +304,6 @@ class IconFileSelection(Gtk.Box):
                 # we don't want to add hidden files
                 if fl[0] == '.':
                     continue
-                # print("File (fl):", fl)
                 # append files with date
                 if os.path.isdir(os.path.join(self.cur_dir, fl)):
                     try:
@@ -321,19 +321,20 @@ class IconFileSelection(Gtk.Box):
                             files.append((fl, os.path.getmtime(os.path.join(self.cur_dir, fl))))
                             number += 1
                     except ValueError as e:
-                        LOG.debug(f"Tried to split filename ({name}) without extension ({e}).")
+                        LOG.debug(f"Tried to split filename ({fl}) without extension ({e}).")
                     except Exception as e:
                         LOG.exception(e)
                         pass
-
             if self.sortorder not in [_ASCENDING, _DESCENDING, _FOLDERFIRST, _FILEFIRST]:
                 self.sortorder = _FOLDERFIRST
 
-            print("sortorder", self.sortorder)
             # A. ascending/descending (file/folder mixed)
             if self.sortorder == _ASCENDING or self.sortorder == _DESCENDING:
                 allobjects = dirs + files
-                allobjects.sort(key = lambda x: x[1], reverse = not self.sortorder == _ASCENDING)
+                if self.sort_by_date:
+                    allobjects.sort(key = lambda x: x[1], reverse = self.sortorder == _ASCENDING)
+                else:
+                    allobjects.sort(key = lambda x: x[0].casefold(), reverse = not self.sortorder == _ASCENDING)
                 for obj, date in allobjects:
                     if os.path.isdir(os.path.join(self.cur_dir, obj)):
                         self.store.append([obj, self.dirIcon, True])
@@ -341,9 +342,13 @@ class IconFileSelection(Gtk.Box):
                         icon = self._get_icon(obj)
                         self.store.append([obj, icon, False])
             # ELSE:
-            # B. sort folder first + fixed sorting by date (TEST ONLY)
-            dirs.sort(key = lambda x: x[1], reverse = True)
-            files.sort(key = lambda x: x[1], reverse = True)
+            # B. sort folder first
+            if self.sort_by_date:
+                dirs.sort (key = lambda x: x[1], reverse = True)
+                files.sort(key = lambda x: x[1], reverse = True)
+            else:
+                dirs.sort (key = lambda x: x[0].casefold(), reverse = False)
+                files.sort(key = lambda x: x[0].casefold(), reverse = False)
             if self.sortorder == _FOLDERFIRST:
                 for dir, date in dirs:
                     self.store.append([dir, self.dirIcon, True])

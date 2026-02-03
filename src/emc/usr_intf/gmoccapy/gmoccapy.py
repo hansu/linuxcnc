@@ -2483,6 +2483,11 @@ class gmoccapy(object):
         for ext in file_ext:
             filetypes += ext.replace("*.", "") + ","
         self.widgets.IconFileSelection1.set_property("filetypes", filetypes)
+        # _ASCENDING = 0
+        # _DESCENDING = 1
+        # _FOLDERFIRST = 2
+        # _FILEFIRST = 3
+        self.widgets.IconFileSelection1.set_property("sortorder", 0)
 
         jump_to_dir = self.prefs.getpref("jump_to_dir", os.path.expanduser("~"), str)
         self.widgets.jump_to_dir_chooser.set_current_folder(jump_to_dir)
