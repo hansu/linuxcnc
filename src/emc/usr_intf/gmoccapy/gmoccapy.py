@@ -2493,6 +2493,7 @@ class gmoccapy(object):
         # _DATE_FILESONLY = 2
         self.widgets.IconFileSelection1.set_property("sortbydate", 2)
         
+        self.sort_by_date_filesonly = self.prefs.getpref("sort_by_date_filesonly", True, bool)
         self.sort_by_date = self.prefs.getpref("sort_by_date", False, bool)
         self.widgets.tbtn_sort.set_active(self.sort_by_date)
 
@@ -5913,7 +5914,10 @@ class gmoccapy(object):
             # _DATE_NONE = 0
             # _DATE_ALL = 1
             # _DATE_FILESONLY = 2
-            self.widgets.IconFileSelection1.set_property("sortbydate", 2)
+            if self.sort_by_date_filesonly:
+                self.widgets.IconFileSelection1.set_property("sortbydate", 2)
+            else:
+                self.widgets.IconFileSelection1.set_property("sortbydate", 1)
         else:
             self.widgets.IconFileSelection1.set_property("sortbydate", 0)
         
