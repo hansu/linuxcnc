@@ -109,7 +109,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
                     'exit': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
                    }
 
-    def __init__(self, size = 36, value = 0, min = 0, max = 100, inc_speed = 100, unit = "", color = "#FF8116", template = "%.1f"):
+    def __init__(self, size = 36, value = 0, min = 0, max = 100, inc_speed = 100, unit = "", color = "#FF8116", template = "%.1f", enablePressEvent = True):
         super(SpeedControl, self).__init__()
 
         # basic settings
@@ -137,6 +137,11 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
 
         self.draw = Gtk.DrawingArea()
         self.draw.connect("draw", self.expose)
+        
+        # enable press event only for base widget
+        if enablePressEvent:
+            self.draw.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+            self.draw.connect("button-press-event", self._on_draw_clicked)
 
         self.draw.set_valign(Gtk.Align.CENTER)
         self.btn_plus.set_valign(Gtk.Align.CENTER)
@@ -149,7 +154,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
 
         self.pack_start(self.table, fill=True, expand=True, padding=0)
         self.show_all()
-        self.connect("destroy", Gtk.main_quit)
+        #self.connect("destroy", Gtk.main_quit)
 
 
         self._update_widget()
@@ -459,6 +464,71 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         except:
             pass
 
+
+    # ------------------------
+    # POPUP
+    # ------------------------
+
+    def _on_draw_clicked(self, widget, event):
+        if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
+            self._open_popup()
+ 
+
+    def _open_popup(self):
+        popup = Gtk.Window()
+        popup.set_modal(True)
+        popup.set_transient_for(self.get_toplevel())
+        
+        popup.set_title("Adjust Value")
+        # popup.set_default_size(600, 120)
+
+        popup_control = SpeedControl(enablePressEvent = False)
+        
+        # inherit properties from parent
+        popup_control.set_property("height", self._size)
+        popup_control.set_property("unit", self._unit)
+        popup_control.set_property("min", self._min)
+        popup_control.set_property("max", self._max)
+        popup_control.set_property("increment", self._increment)
+        popup_control.set_property("inc_speed", self._speed)
+        popup_control.set_property("value", self._value)
+        popup_control.set_property("template", self._template)
+        popup_control.set_property("color", self.color)
+
+        # share adjustment
+        popup_control.set_adjustment(self.adjustment)
+
+        # only width doubled
+        popup_control.set_size_request(
+            self.draw.get_allocated_width() * 3,
+            self._size
+        )
+
+        # enable dragging
+        popup_control.draw.add_events(
+            Gdk.EventMask.BUTTON_PRESS_MASK |
+            Gdk.EventMask.BUTTON_MOTION_MASK
+        )
+        popup_control.draw.connect(
+            "motion-notify-event",
+            popup_control._on_drag_motion
+        )
+
+        popup.add(popup_control)
+        # popup.connect("focus-out-event", lambda w, e: w.destroy())
+        # popup.connect("delete-event", lambda w, e: w.destroy() or False)
+        popup.show_all()
+
+
+    def _on_drag_motion(self, widget, event):
+        if event.state & Gdk.ModifierType.BUTTON1_MASK:
+            x = max(0, min(event.x, widget.get_allocated_width()))
+            percentage = x / widget.get_allocated_width()
+            value = self._min + percentage * (self._max - self._min)
+            self.set_value(value)
+            
+
+
 # for testing without glade editor:
 # to show some behavior and setting options
 def main():
@@ -469,6 +539,7 @@ def main():
     window.set_title("Button Speed Control")
     window.set_position(Gtk.WindowPosition.CENTER)
     window.show_all()
+    window.connect("destroy", Gtk.main_quit)
     speedcontrol.set_property("height", 48)
     speedcontrol.set_property("unit", "mm/min")
     color = Gdk.RGBA()
