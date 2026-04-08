@@ -142,6 +142,8 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         if enablePressEvent:
             self.draw.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
             self.draw.connect("button-press-event", self._on_draw_clicked)
+        
+        self.popup = None
 
         self.draw.set_valign(Gtk.Align.CENTER)
         self.btn_plus.set_valign(Gtk.Align.CENTER)
@@ -475,11 +477,14 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
  
 
     def _open_popup(self):
-        popup = Gtk.Window()
-        popup.set_modal(True)
-        popup.set_transient_for(self.get_toplevel())
+        if self.popup is not None:
+            return
+        self.popup = Gtk.Window()
+        self.popup.set_modal(False)
+        self.popup.set_transient_for(self.get_toplevel())
+        self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
         
-        popup.set_title("Adjust Value")
+        self.popup.set_title("Adjust Value")
         # popup.set_default_size(600, 120)
 
         popup_control = SpeedControl(enablePressEvent = False)
@@ -514,10 +519,10 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             popup_control._on_drag_motion
         )
 
-        popup.add(popup_control)
+        self.popup.add(popup_control)
         # popup.connect("focus-out-event", lambda w, e: w.destroy())
-        # popup.connect("delete-event", lambda w, e: w.destroy() or False)
-        popup.show_all()
+        #popup.connect("delete-event", lambda w, e: w.destroy() or False)
+        self.popup.show_all()
 
 
     def _on_drag_motion(self, widget, event):
