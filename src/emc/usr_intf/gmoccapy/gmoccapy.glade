@@ -4934,7 +4934,99 @@ to test your settings.</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <object class="GtkFrame" id="frm_gcodeview_font">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label-xalign">0.5</property>
+                                <child>
+                                  <!-- n-columns=2 n-rows=3 -->
+                                  <object class="GtkGrid" id="grid_gcode_font">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="margin-start">3</property>
+                                    <property name="margin-end">3</property>
+                                    <property name="margin-top">3</property>
+                                    <property name="margin-bottom">3</property>
+                                    <property name="row-spacing">3</property>
+                                    <property name="column-spacing">3</property>
+                                    <child>
+                                      <object class="GtkFontButton" id="fontbutton_gcodeview">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">True</property>
+                                        <property name="font">Sans 12</property>
+                                        <property name="language">de-de</property>
+                                        <property name="level">GTK_FONT_CHOOSER_LEVEL_SIZE | GTK_FONT_CHOOSER_LEVEL_FAMILY</property>
+                                        <property name="preview-text">N1200 G1 X4.05 Y3.725 F240 S3500 M3</property>
+                                        <signal name="font-set" handler="on_fontbutton_gcodeview_font_set" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">0</property>
+                                        <property name="width">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="chk_font_regular">
+                                        <property name="label" translatable="yes">Regular/Medium</property>
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">False</property>
+                                        <property name="active">True</property>
+                                        <property name="draw-indicator">True</property>
+                                        <signal name="toggled" handler="on_chk_font_regular_toggled" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">1</property>
+                                        <property name="top-attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="chk_font_monospace">
+                                        <property name="label" translatable="yes">Monospace</property>
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="receives-default">False</property>
+                                        <property name="active">True</property>
+                                        <property name="draw-indicator">True</property>
+                                        <signal name="toggled" handler="on_chk_font_monospace_toggled" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="lbl_font_filter">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">start</property>
+                                        <property name="margin-start">3</property>
+                                        <property name="margin-end">3</property>
+                                        <property name="label" translatable="yes">Filter:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left-attach">0</property>
+                                        <property name="top-attach">1</property>
+                                        <property name="width">2</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child type="label">
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="label" translatable="yes">&lt;b&gt;G-code view font&lt;/b&gt;</property>
+                                    <property name="use-markup">True</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>
