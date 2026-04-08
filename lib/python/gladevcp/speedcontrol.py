@@ -474,7 +474,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
     def _on_draw_clicked(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
             self._open_popup()
- 
+
     def _get_widget_screen_position(self):
         toplevel = self.get_toplevel()
         px, py = toplevel.get_position()
@@ -486,25 +486,72 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         return cx, cy
 
     def _open_popup(self):
-        if self.popup is not None:
-            return
+        
+        # not needed for single widget
+        # if self.popup is not None:
+        #     return
+
+        parent = self.get_toplevel()
+
+        # =========================================================
+        # DIM WINDOW
+        # =========================================================
+        self.dim = Gtk.Window()
+        self.dim.set_decorated(False)
+        self.dim.set_keep_above(True)
+        self.dim.set_transient_for(parent)
+        self.dim.set_app_paintable(True)
+        
+        screen = Gdk.Screen.get_default()
+        visual = screen.get_rgba_visual()
+        if visual is not None:
+            self.dim.set_visual(visual)
+
+        px, py = parent.get_position()
+        pw, ph = parent.get_size()
+
+        self.dim.move(px, py)
+        self.dim.resize(pw, ph)
+
+        area = Gtk.EventBox()
+        area.set_visible_window(False)
+        self.dim.add(area)
+
+        def draw_dim(widget, cr):
+            alloc = widget.get_allocation()
+            cr.set_source_rgba(0, 0, 0, 0.5)
+            cr.rectangle(0, 0, alloc.width, alloc.height)
+            cr.fill()
+            return False
+
+        area.connect("draw", draw_dim)
+
+        def close_all(widget, event):
+            if self.popup:
+                self.popup.destroy()
+                self.popup = None
+            if self.dim:
+                self.dim.destroy()
+                self.dim = None
+            return True
+
+        area.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        area.connect("button-press-event", close_all)
+
+        self.dim.show_all()
+
+        # =========================================================
+        # POPUP WINDOW
+        # =========================================================
         self.popup = Gtk.Window()
         self.popup.set_modal(False)
-        self.popup.set_transient_for(self.get_toplevel())
-        self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
-        
-        # parent widget center position
-        wx, wy = self._get_widget_screen_position()
-        # popup widget size
-        pw = self.draw.get_allocated_width() * 3
-        ph = self._size
-        self.popup.move(wx - int(pw / 2), wy - int(ph / 2))
-        
-        self.popup.set_title("Adjust Value")
-        # popup.set_default_size(600, 120)
+        self.popup.set_transient_for(parent)
+        self.popup.set_decorated(False)
+        self.popup.set_keep_above(True)
 
+        #self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
         popup_control = SpeedControl(enablePressEvent = False)
-        
+
         # inherit properties from parent
         popup_control.set_property("height", self._size)
         popup_control.set_property("unit", self._unit)
@@ -540,7 +587,13 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         #popup.connect("delete-event", lambda w, e: w.destroy() or False)
         self.popup.show_all()
 
+        # FORCE STACK ORDER
+        def raise_order():
+            self.dim.present()
+            self.popup.present()   # MUST be after dim
 
+        GLib.idle_add(raise_order)
+        
     def _on_drag_motion(self, widget, event):
         if event.state & Gdk.ModifierType.BUTTON1_MASK:
             x = max(0, min(event.x, widget.get_allocated_width()))
@@ -548,8 +601,8 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             value = self._min + percentage * (self._max - self._min)
             self.set_value(value)
             
-
-
+            
+            
 # for testing without glade editor:
 # to show some behavior and setting options
 def main():
