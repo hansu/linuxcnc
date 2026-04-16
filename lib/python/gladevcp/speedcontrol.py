@@ -507,11 +507,16 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         if visual is not None:
             self.dim.set_visual(visual)
 
-        px, py = parent.get_position()
-        pw, ph = parent.get_size()
-
-        self.dim.move(px, py)
-        self.dim.resize(pw, ph)
+        window, px, py = parent.get_window().get_origin()
+        
+        # On Wayland get_origin() always returns (0, 0) - maximize the dim window in this case.
+        # Most probably the window is also in full screen if it is located at (0, 0).
+        if (px == 0 and py == 0):
+            self.dim.maximize()
+        else:
+            pw, ph = parent.get_size()
+            self.dim.move(px, py)
+            self.dim.resize(pw, ph)
 
         area = Gtk.EventBox()
         area.set_visible_window(False)
