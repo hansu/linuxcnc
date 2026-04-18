@@ -704,6 +704,7 @@ proc makeWatch {} {
     bind $::cisp <Configure> {
         if {$::watchlist_len <= 20} reloadWatch
     }
+    bind $::cisp <Button-3> {popupmenu_watch_general %W %X %Y}
 }
 
 proc makeSettings {} {
@@ -957,6 +958,7 @@ proc watchHAL {which} {
     refreshItem $i $vartype $label
 }
 
+# Popup menu for selected items
 proc popupmenu_watch {vartype label index writable which x y} {
     # create menu
     set m [menu .popupMenu$index -tearoff false]
@@ -973,6 +975,49 @@ proc popupmenu_watch {vartype label index writable which x y} {
     # show menu
     tk_popup $m $x $y
     bind $m <FocusOut> [list destroy $m]
+}
+
+# Popup menu for background (no item selected)
+proc popupmenu_watch_general {w x y} {
+    # check if no other element is under cursor
+    if {![llength [$w find withtag current]]} {
+        # create menu
+        set m [menu .popupMenuText -tearoff false]
+        # add entries
+        $m add command -label [msgcat::mc "Add from clipboard"] -command {
+            catch {parse_hal_text [clipboard get]}
+        }
+        $m add command -label [msgcat::mc "Erase Watch"] -command {
+            watchReset all
+            setStatusbar [msgcat::mc "Watchlist cleared"]
+        }
+        # show menu
+        tk_popup $m $x $y
+        bind $m <FocusOut> [list destroy $m]
+    }
+}
+
+# Parse <text> as a HAL file to filter out pins, signals and parameters and add
+# the result to the  watchlist
+proc parse_hal_text {text} {
+    foreach line [split $text "\n"] {
+        set line [string trim $line]
+        # skip empty lines
+        if {$line eq ""} continue
+        # if line begins with 'net', take next as signal and rest as pins
+        if {[regexp {^\s*net\s+(\S+)\s*(.*)$} $line -> sig pin]} {
+            addToWatchFromSel sig $sig
+            if {$pin ne ""} {
+                addToWatchFromSel pin $pin
+            }
+        # first argument after setp is a parameter
+        } elseif {[regexp {^\s*setp\s+(\S+)} $line -> param]} {
+            addToWatchFromSel param $param
+        # try adding everything else as pin
+        } else {
+            addToWatchFromSel pin $line
+        }
+    }
 }
 
 proc popupmenu_text {x y} {
