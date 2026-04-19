@@ -266,6 +266,8 @@ set watchmenu [menu $menubar.watch -tearoff 1]
             -command {addToWatch sig [msgcat::mc "Signal"]}
         $watchmenu add command -label [msgcat::mc "Add parameter"] \
             -command {addToWatch param [msgcat::mc "Parameter"]}
+        $watchmenu add command -label [msgcat::mc "Add from HAL text"] \
+            -command addToWatchFromText
         $watchmenu add separator
         $watchmenu add command -label [msgcat::mc "Reload Watch"] \
             -command {reloadWatch}
@@ -987,6 +989,7 @@ proc popupmenu_watch_general {w x y} {
         $m add command -label [msgcat::mc "Add from clipboard"] -command {
             catch {parse_hal_text [clipboard get]}
         }
+        $m add command -label [msgcat::mc "Add from HAL text"] -command addToWatchFromText
         $m add command -label [msgcat::mc "Erase Watch"] -command {
             watchReset all
             setStatusbar [msgcat::mc "Watchlist cleared"]
@@ -1018,6 +1021,30 @@ proc parse_hal_text {text} {
             addToWatchFromSel pin $line
         }
     }
+}
+
+# Creates a window with a text box to add items to the watchlist
+proc addToWatchFromText {} {
+    # create toplevel dialog
+    set w .clipDialog
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [msgcat::mc "Add to watch"]
+    # text widget
+    text $w.t -width 80 -height 20
+    pack $w.t -fill both -expand 1
+    # insert clipboard content
+    catch {$w.t insert 1.0 [clipboard get]}
+    # frame for buttons and buttons
+    frame $w.f
+    pack $w.f -fill x
+    button $w.f.ok -text "Add" -command "
+        set txt \[$w.t get 1.0 end\]
+        destroy $w
+        parse_hal_text \$txt
+    "
+    button $w.f.cancel -text "Cancel" -command "destroy $w"
+    pack $w.f.ok $w.f.cancel -side left -expand 1 -fill x
 }
 
 proc popupmenu_text {x y} {
@@ -1113,7 +1140,7 @@ proc entrybox {defVal buttonText label} {
         return "cancel"
     } else {
         set wn [toplevel .top]
-        wm title $wn [msgcat::mc "User input"]
+        wm title $wn [msgcat::mc "Input"]
         set xpos "[ expr {[winfo rootx [winfo parent $wn]]+ \
             ([winfo width [winfo parent $wn]]-[winfo reqwidth $wn])/2}]"
         set ypos "[ expr {[winfo rooty [winfo parent $wn]]+ \
