@@ -6,6 +6,7 @@ ver 3.5.2 -- LinuxCNC 2.10.0-pre0 (2026-04-10)
    a tool is simply selected by row selection. (#3706)
  - Save current text of tool table when in edit mode (#3787)
  - Make value conversion of calculator independent of locale setting (#3691)
+ - Fix homing abort on focus out event (#3667)
  - Move offsetpage buttons to table frame, add toggle button for calculator use (#3509)
  - Add button to call calculator in mdi and gcode edit modes (#3496)
 
