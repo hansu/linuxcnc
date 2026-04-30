@@ -95,9 +95,9 @@ class HalShowWindow(Gtk.Window):
         self.tree_view.set_activate_on_single_click(True)
         self.tree_view.get_selection().connect("changed", self.on_tree_selection_changed)
 
-        tree_scroll = Gtk.ScrolledWindow()
-        tree_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        tree_scroll.add(self.tree_view)
+        self.tree_scroll = Gtk.ScrolledWindow()
+        self.tree_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.tree_scroll.add(self.tree_view)
 
         # Right side: Notebook with SHOW and WATCH tabs
         self.notebook = Gtk.Notebook()
@@ -153,14 +153,14 @@ class HalShowWindow(Gtk.Window):
         value_column = Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=2)
         self.watch_view.append_column(value_column)
 
-        watch_scroll = Gtk.ScrolledWindow()
-        watch_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        watch_scroll.add(self.watch_view)
-        watch_box.pack_start(watch_scroll, True, True, 0)
+        self.watch_scroll = Gtk.ScrolledWindow()
+        self.watch_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.watch_scroll.add(self.watch_view)
+        watch_box.pack_start(self.watch_scroll, True, True, 0)
 
         self.notebook.append_page(watch_box, Gtk.Label(label="WATCH"))
 
-        paned.add1(tree_scroll)
+        paned.add1(self.tree_scroll)
         paned.add2(self.notebook)
         paned.set_position(int(900 / 3))
 
@@ -198,12 +198,28 @@ class HalShowWindow(Gtk.Window):
         return self.run_hal_cmd(*command)
 
     def populate_tree(self):
+        if hasattr(self, 'tree_scroll'):
+            vadj = self.tree_scroll.get_vadjustment()
+            old_value = vadj.get_value() if vadj else 0
+        else:
+            old_value = 0
+
         self.tree_store.clear()
         for hal_type, label in HAL_GROUPS:
             parent = self.tree_store.append(None, [label, label, hal_type, "group"])
             items = self.get_hal_list(hal_type)
             for item in items:
                 self.append_hierarchical_item(parent, item, hal_type)
+
+        if hasattr(self, 'tree_scroll') and vadj:
+            GLib.idle_add(self.restore_tree_scroll, old_value)
+
+    def restore_tree_scroll(self, old_value):
+        vadj = self.tree_scroll.get_vadjustment()
+        if vadj:
+            max_value = max(0, vadj.get_upper() - vadj.get_page_size())
+            vadj.set_value(min(old_value, max_value))
+        return False  # Don't repeat
 
     def append_hierarchical_item(self, parent, name, hal_type):
         parts = name.split('.')
@@ -247,10 +263,11 @@ class HalShowWindow(Gtk.Window):
         details = self.get_hal_show(hal_type, name)
         self.detail_buffer.set_text(details)
 
-        # Automatically add to watch
-        if (name, hal_type) not in self.watch_list:
-            self.watch_list.append((name, hal_type))
-            self.update_watch_view()
+        # Only auto-add pins when the WATCH tab is visible
+        if self.notebook.get_current_page() == 1 and hal_type == "pin":
+            if (name, hal_type) not in self.watch_list:
+                self.watch_list.append((name, hal_type))
+                self.update_watch_view()
 
     def add_to_watch(self, hal_type):
         selection = self.tree_view.get_selection()
@@ -275,10 +292,22 @@ class HalShowWindow(Gtk.Window):
     def update_watch_view(self):
         if not self.watch_list:
             return True  # Keep timer running
-        self.watch_store.clear()
-        for name, hal_type in self.watch_list:
+
+        # Update existing rows to avoid flashing
+        for i in range(len(self.watch_store)):
+            if i >= len(self.watch_list):
+                break
+            name, hal_type = self.watch_list[i]
+            value, icon_name = self.get_hal_value(hal_type, name)
+            self.watch_store[i][2] = value  # value column
+            self.watch_store[i][3] = icon_name  # icon column
+
+        # Add new rows if watch_list is larger than watch_store
+        for i in range(len(self.watch_store), len(self.watch_list)):
+            name, hal_type = self.watch_list[i]
             value, icon_name = self.get_hal_value(hal_type, name)
             self.watch_store.append([name, hal_type, value, icon_name])
+
         return True  # Keep timer running
 
     def is_bit_type(self, hal_type, name):
