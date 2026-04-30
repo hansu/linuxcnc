@@ -16,7 +16,7 @@ import sys
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 
 HAL_GROUPS = [
@@ -45,6 +45,42 @@ class HalShowWindow(Gtk.Window):
 
         main_box.pack_start(toolbar, False, False, 0)
 
+        # Menu bar
+        menubar = Gtk.MenuBar()
+        main_box.pack_start(menubar, False, False, 0)
+
+        file_menu = Gtk.Menu()
+        file_item = Gtk.MenuItem(label="File")
+        file_item.set_submenu(file_menu)
+        menubar.append(file_item)
+
+        exit_item = Gtk.MenuItem(label="Exit")
+        exit_item.connect("activate", lambda _w: Gtk.main_quit())
+        file_menu.append(exit_item)
+
+        watch_menu = Gtk.Menu()
+        watch_item = Gtk.MenuItem(label="Watch")
+        watch_item.set_submenu(watch_menu)
+        menubar.append(watch_item)
+
+        add_pin_item = Gtk.MenuItem(label="Add Pin")
+        add_pin_item.connect("activate", lambda _w: self.add_to_watch("pin"))
+        watch_menu.append(add_pin_item)
+
+        add_sig_item = Gtk.MenuItem(label="Add Signal")
+        add_sig_item.connect("activate", lambda _w: self.add_to_watch("sig"))
+        watch_menu.append(add_sig_item)
+
+        add_param_item = Gtk.MenuItem(label="Add Parameter")
+        add_param_item.connect("activate", lambda _w: self.add_to_watch("param"))
+        watch_menu.append(add_param_item)
+
+        watch_menu.append(Gtk.SeparatorMenuItem())
+
+        clear_watch_item = Gtk.MenuItem(label="Clear Watch")
+        clear_watch_item.connect("activate", lambda _w: self.clear_watch())
+        watch_menu.append(clear_watch_item)
+
         paned = Gtk.Paned.new(Gtk.Orientation.HORIZONTAL)
         main_box.pack_start(paned, True, True, 0)
 
@@ -63,25 +99,73 @@ class HalShowWindow(Gtk.Window):
         tree_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         tree_scroll.add(self.tree_view)
 
-        detail_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        detail_label = Gtk.Label(label="Details")
-        detail_label.set_xalign(0.0)
-        detail_box.pack_start(detail_label, False, False, 0)
+        # Right side: Notebook with SHOW and WATCH tabs
+        self.notebook = Gtk.Notebook()
+        self.notebook.set_tab_pos(Gtk.PositionType.TOP)
+
+        # SHOW tab
+        show_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        show_label = Gtk.Label(label="Details")
+        show_label.set_xalign(0.0)
+        show_box.pack_start(show_label, False, False, 0)
 
         self.detail_textview = Gtk.TextView()
         self.detail_textview.set_editable(False)
         self.detail_textview.set_cursor_visible(False)
         self.detail_buffer = self.detail_textview.get_buffer()
-        detail_scroll = Gtk.ScrolledWindow()
-        detail_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        detail_scroll.add(self.detail_textview)
-        detail_box.pack_start(detail_scroll, True, True, 0)
+        show_scroll = Gtk.ScrolledWindow()
+        show_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        show_scroll.add(self.detail_textview)
+        show_box.pack_start(show_scroll, True, True, 0)
+
+        self.notebook.append_page(show_box, Gtk.Label(label="SHOW"))
+
+        # WATCH tab
+        watch_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        watch_toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        add_pin_button = Gtk.Button(label="Add Pin")
+        add_pin_button.connect("clicked", lambda _btn: self.add_to_watch("pin"))
+        watch_toolbar.pack_start(add_pin_button, False, False, 0)
+        add_sig_button = Gtk.Button(label="Add Signal")
+        add_sig_button.connect("clicked", lambda _btn: self.add_to_watch("sig"))
+        watch_toolbar.pack_start(add_sig_button, False, False, 0)
+        add_param_button = Gtk.Button(label="Add Parameter")
+        add_param_button.connect("clicked", lambda _btn: self.add_to_watch("param"))
+        watch_toolbar.pack_start(add_param_button, False, False, 0)
+        refresh_watch_button = Gtk.Button(label="Refresh")
+        refresh_watch_button.connect("clicked", lambda _btn: self.update_watch_view())
+        watch_toolbar.pack_start(refresh_watch_button, False, False, 0)
+        clear_button = Gtk.Button(label="Clear Watch")
+        clear_button.connect("clicked", lambda _btn: self.clear_watch())
+        watch_toolbar.pack_start(clear_button, False, False, 0)
+        watch_box.pack_start(watch_toolbar, False, False, 0)
+
+        self.watch_store = Gtk.ListStore(str, str, str)  # Name, Type, Value
+        self.watch_view = Gtk.TreeView(model=self.watch_store)
+        name_column = Gtk.TreeViewColumn("Name", Gtk.CellRendererText(), text=0)
+        self.watch_view.append_column(name_column)
+        type_column = Gtk.TreeViewColumn("Type", Gtk.CellRendererText(), text=1)
+        self.watch_view.append_column(type_column)
+        value_column = Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=2)
+        self.watch_view.append_column(value_column)
+
+        watch_scroll = Gtk.ScrolledWindow()
+        watch_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        watch_scroll.add(self.watch_view)
+        watch_box.pack_start(watch_scroll, True, True, 0)
+
+        self.notebook.append_page(watch_box, Gtk.Label(label="WATCH"))
 
         paned.add1(tree_scroll)
-        paned.add2(detail_box)
+        paned.add2(self.notebook)
         paned.set_position(int(900 / 3))
 
+        self.watch_list = []  # List of (name, type) tuples
+
         self.populate_tree()
+
+        # Auto-refresh watch tab every 1 second
+        GLib.timeout_add(1000, self.update_watch_view)
 
     def run_hal_cmd(self, *args):
         try:
@@ -158,6 +242,51 @@ class HalShowWindow(Gtk.Window):
         hal_type = model[tree_iter][2]
         details = self.get_hal_show(hal_type, name)
         self.detail_buffer.set_text(details)
+
+        # Automatically add to watch
+        if (name, hal_type) not in self.watch_list:
+            self.watch_list.append((name, hal_type))
+            self.update_watch_view()
+
+    def add_to_watch(self, hal_type):
+        selection = self.tree_view.get_selection()
+        model, tree_iter = selection.get_selected()
+        if tree_iter is None:
+            return
+        row_type = model[tree_iter][3]
+        if row_type != "item":
+            return
+        name = model[tree_iter][1]
+        selected_type = model[tree_iter][2]
+        if selected_type != hal_type:
+            return  # Only add if types match
+        if (name, hal_type) not in self.watch_list:
+            self.watch_list.append((name, hal_type))
+            self.update_watch_view()
+
+    def clear_watch(self):
+        self.watch_list.clear()
+        self.watch_store.clear()
+
+    def update_watch_view(self):
+        if not self.watch_list:
+            return True  # Keep timer running
+        self.watch_store.clear()
+        for name, hal_type in self.watch_list:
+            value = self.get_hal_value(hal_type, name)
+            self.watch_store.append([name, hal_type, value])
+        return True  # Keep timer running
+
+    def get_hal_value(self, hal_type, name):
+        if hal_type == "pin":
+            output = self.run_hal_cmd("getp", name)
+        elif hal_type == "param":
+            output = self.run_hal_cmd("getp", name)
+        elif hal_type == "sig":
+            output = self.run_hal_cmd("gets", name)
+        else:
+            return "N/A"
+        return output if output else "N/A"
 
 
 def main():
