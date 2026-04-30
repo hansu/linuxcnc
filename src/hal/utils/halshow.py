@@ -140,12 +140,16 @@ class HalShowWindow(Gtk.Window):
         watch_toolbar.pack_start(clear_button, False, False, 0)
         watch_box.pack_start(watch_toolbar, False, False, 0)
 
-        self.watch_store = Gtk.ListStore(str, str, str)  # Name, Type, Value
+        self.watch_store = Gtk.ListStore(str, str, str, str)  # Name, Type, Value, IconName
         self.watch_view = Gtk.TreeView(model=self.watch_store)
         name_column = Gtk.TreeViewColumn("Name", Gtk.CellRendererText(), text=0)
         self.watch_view.append_column(name_column)
         type_column = Gtk.TreeViewColumn("Type", Gtk.CellRendererText(), text=1)
         self.watch_view.append_column(type_column)
+        icon_renderer = Gtk.CellRendererPixbuf()
+        icon_column = Gtk.TreeViewColumn("State", icon_renderer)
+        icon_column.add_attribute(icon_renderer, "icon-name", 3)
+        self.watch_view.append_column(icon_column)
         value_column = Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=2)
         self.watch_view.append_column(value_column)
 
@@ -273,9 +277,18 @@ class HalShowWindow(Gtk.Window):
             return True  # Keep timer running
         self.watch_store.clear()
         for name, hal_type in self.watch_list:
-            value = self.get_hal_value(hal_type, name)
-            self.watch_store.append([name, hal_type, value])
+            value, icon_name = self.get_hal_value(hal_type, name)
+            self.watch_store.append([name, hal_type, value, icon_name])
         return True  # Keep timer running
+
+    def is_bit_type(self, hal_type, name):
+        if hal_type == "pin":
+            output = self.run_hal_cmd("ptype", name)
+        elif hal_type == "sig":
+            output = self.run_hal_cmd("stype", name)
+        else:
+            return False
+        return output.strip().lower() == "bit"
 
     def get_hal_value(self, hal_type, name):
         if hal_type == "pin":
@@ -285,8 +298,19 @@ class HalShowWindow(Gtk.Window):
         elif hal_type == "sig":
             output = self.run_hal_cmd("gets", name)
         else:
-            return "N/A"
-        return output if output else "N/A"
+            return "N/A", None
+
+        value = output.strip() if output else "N/A"
+        icon_name = None
+        if self.is_bit_type(hal_type, name):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "on", "yes"}:
+                icon_name = "gtk-yes"
+                value = "1"
+            elif normalized in {"0", "false", "off", "no"}:
+                icon_name = "gtk-no"
+                value = "0"
+        return value, icon_name
 
 
 def main():
