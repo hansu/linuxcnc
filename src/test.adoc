@@ -1,0 +1,71 @@
+:ini: ini
+:hal: hal
+:ngc: ngc
+
+
+
+.Custom Section Example
+[source,{ini}]
+----
+# some comment
+[PROBE]
+Z_FEEDRATE = 50
+Z_OFFSET = 12
+Z_SAFE_DISTANCE = -10
+----
+
+[source,python]
+----
+#!/usr/bin/env python3
+
+import sys
+
+def main(argv):
+
+  openfile = open(argv[0], 'r')
+  file_in = openfile.readlines()
+  openfile.close()
+
+  file_out = []
+  for line in file_in:
+    # print(line)
+    if line.find('Z') != -1:
+      words = line.rstrip('\n')
+      words = words.split(' ')
+      newword = ''
+----
+
+[source,{ngc}]
+----
+G10 L2 P1 X0 Y0 Z0 (ensure that G54 is set to machine zero)
+G0 X-0.1 Y0 Z0
+G1 F1 Z-0.25
+G3 X-0.1 Y0 I0.1 J0
+G0 Z0
+M2
+----
+
+
+[source,{hal}]
+----
+# standard pinout config file for 3-axis steppers
+# using a parport for I/O
+#
+# first load the parport driver
+loadrt hal_parport cfg="0x0378"
+#
+# next connect the parport functions to threads
+# read inputs first
+addf parport.0.read base-thread 1
+# write outputs last
+addf parport.0.write base-thread -1
+#
+# finally connect physical pins to the signals
+net Xstep => parport.0.pin-03-out
+net Xdir  => parport.0.pin-02-out
+net Ystep => parport.0.pin-05-out
+net Ydir  => parport.0.pin-04-out
+net Zstep => parport.0.pin-07-out
+net Zdir  => parport.0.pin-06-out
+----
+
