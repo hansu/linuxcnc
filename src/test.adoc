@@ -7,11 +7,27 @@
 .Custom Section Example
 [source,{ini}]
 ----
-# some comment
+; This is my mill configuration file.
+# I set it up on January 12, 2012
+
+DISPLAY = axis
+# DISPLAY = touchy
+
 [PROBE]
 Z_FEEDRATE = 50
 Z_OFFSET = 12
 Z_SAFE_DISTANCE = -10
+
+
+# Below does not result in INCORRECT=value
+# because comments are not interpreted as comments in values
+INCORRECT = value # and this is not a comment
+
+# Correct comment
+# hash char # is a comment om this line
+CORRECT = value
+
+
 ----
 
 [source,python]

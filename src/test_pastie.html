@@ -595,11 +595,25 @@ pre.rouge .w {
 <div class="listingblock">
 <div class="title">Custom Section Example</div>
 <div class="content">
-<pre class="rouge highlight"><code data-lang="ini"><span class="c"># some comment
-</span><span class="nn">[PROBE]</span>
+<pre class="rouge highlight"><code data-lang="ini"><span class="c">; This is my mill configuration file.
+# I set it up on January 12, 2012
+</span>
+<span class="py">DISPLAY</span> <span class="p">=</span> <span class="s">axis</span>
+<span class="c"># DISPLAY = touchy
+</span>
+<span class="nn">[PROBE]</span>
 <span class="py">Z_FEEDRATE</span> <span class="p">=</span> <span class="s">50</span>
 <span class="py">Z_OFFSET</span> <span class="p">=</span> <span class="s">12</span>
-<span class="py">Z_SAFE_DISTANCE</span> <span class="p">=</span> <span class="s">-10</span></code></pre>
+<span class="py">Z_SAFE_DISTANCE</span> <span class="p">=</span> <span class="s">-10</span>
+
+
+<span class="c"># Below does not result in INCORRECT=value
+# because comments are not interpreted as comments in values
+</span><span class="py">INCORRECT</span> <span class="p">=</span> <span class="s">value # and this is not a comment</span>
+
+<span class="c"># Correct comment
+# hash char # is a comment om this line
+</span><span class="py">CORRECT</span> <span class="p">=</span> <span class="s">value</span></code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -659,7 +673,7 @@ pre.rouge .w {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-05-24 19:22:39 +0200
+Last updated 2026-05-25 11:34:47 +0200
 </div>
 </div>
 </body>

@@ -30,6 +30,7 @@ for style in "${STYLES[@]}"; do
   asciidoctor \
     -r ../docs/src/extensions/rouge_hal.rb \
     -r ../docs/src/extensions/rouge_ngc.rb \
+    -r ../docs/src/extensions/rouge_ini.rb \
     -a source-highlighter=rouge \
     -a rouge-style="$style" \
     "$INPUT_FILE" \
