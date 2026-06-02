@@ -359,8 +359,8 @@ static void init_display_window(void)
     for(i = 0; i<16; i++) {
         alloc_color(&(disp->color_normal[i]), normal_colors[i][0],
                     normal_colors[i][1], normal_colors[i][2]);
-        alloc_color(&(disp->color_selected[i]), selected_colors[i][0],
-                    selected_colors[i][1], selected_colors[i][2]);
+        alloc_color(&(disp->color_selected[i]), normal_colors[i][0],
+                    normal_colors[i][1], normal_colors[i][2]);
     }
 
 }
