@@ -724,17 +724,16 @@ void draw_triggerline(int chan_num, int highlight) {
 
     if(ctrl_shm->trig_edge) dy = -dy;
 
+    /* set color for trigger line and edge indicator */
     if(highlight) {
-        gdk_cairo_set_source_rgba(disp->context, &disp->color_selected[chan_num - 1]);
+        gdk_cairo_set_source_rgba(disp->context, &disp->color_grid);
     } else {
-        gdk_cairo_set_source_rgba(disp->context, &disp->color_normal[chan_num - 1]);
+        gdk_cairo_set_source_rgba(disp->context, &disp->color_baseline);
     }
     cairo_set_dash(disp->context, dashes, ndash, 0.0);
     line(chan_num | 0x200, 0, y1, disp->width, y1);
     /* setting ndash = 0 to disable dashing */
     cairo_set_dash(disp->context, dashes, 0, 0.0);
-    /* set color for trigger edge indicator */
-    gdk_cairo_set_source_rgba(disp->context, &disp->color_baseline);
 
     /* draw trigger edge indicators */
     line(chan_num | 0x300, 2*dx, y1, 2*dx, y1 + 2*dy);
