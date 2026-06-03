@@ -1,0 +1,17 @@
+loadrt siggen num_chan=2
+addf siggen.0.update servo-thread
+addf siggen.1.update servo-thread
+
+setp siggen.0.frequency 100
+setp siggen.0.amplitude 10
+
+setp siggen.1.frequency 1270
+setp siggen.1.amplitude 0.5
+
+loadrt sum2 count=1
+addf sum2.0 servo-thread
+
+
+net sig-a siggen.0.square => sum2.0.in0
+net sig-b siggen.1.triangle => sum2.0.in1
+net test-signal sum2.0.out
