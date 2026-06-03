@@ -87,6 +87,10 @@ static void edge_button_clicked(GtkWidget * widget, gpointer * gdata);
 static void level_changed(GtkAdjustment * adj, gpointer gdata);
 static void pos_changed(GtkAdjustment * adj, gpointer gdata);
 
+/* external callback functions from scope.c */
+extern void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata);
+extern void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata);
+
 /***********************************************************************
 *                       PUBLIC FUNCTIONS                               *
 ************************************************************************/
@@ -201,6 +205,10 @@ static void init_trigger_mode_window(void)
     trig->normal_button = gtk_radio_button_new_with_label(NULL, _("Normal"));
     trig->auto_button = gtk_radio_button_new_with_label_from_widget(
         GTK_RADIO_BUTTON(trig->normal_button), _("Auto"));
+    ctrl_usr->rm_single_button = gtk_radio_button_new_with_label_from_widget(
+        GTK_RADIO_BUTTON(trig->normal_button), _("Single"));
+    ctrl_usr->rm_roll_button = gtk_radio_button_new_with_label_from_widget(
+        GTK_RADIO_BUTTON(trig->normal_button), _("Roll"));
     /* and a regular button */
     trig->force_button = gtk_button_new_with_label(_("Force"));
     /* now put them into the box */
@@ -209,17 +217,27 @@ static void init_trigger_mode_window(void)
     gtk_box_pack_start(GTK_BOX(ctrl_usr->trig_mode_win),
 	trig->auto_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ctrl_usr->trig_info_win),
+    ctrl_usr->rm_single_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(ctrl_usr->trig_info_win),
+    ctrl_usr->rm_roll_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(ctrl_usr->trig_info_win),
 	trig->force_button, FALSE, FALSE, 0);
     /* hook callbacks to buttons */
     g_signal_connect(trig->normal_button, "clicked",
 	G_CALLBACK(normal_button_clicked), NULL);
     g_signal_connect(trig->auto_button, "clicked",
 	G_CALLBACK(auto_button_clicked), NULL);
+    g_signal_connect(ctrl_usr->rm_single_button, "clicked",
+    G_CALLBACK(rm_single_button_clicked), NULL);
+    g_signal_connect(ctrl_usr->rm_roll_button, "clicked",
+    G_CALLBACK(rm_roll_button_clicked), NULL);
     g_signal_connect(trig->force_button, "clicked",
 	G_CALLBACK(force_button_clicked), NULL);
     /* and make them visible */
     gtk_widget_show(trig->normal_button);
     gtk_widget_show(trig->auto_button);
+    gtk_widget_show(ctrl_usr->rm_single_button);
+    gtk_widget_show(ctrl_usr->rm_roll_button);
     gtk_widget_show(trig->force_button);
 }
 

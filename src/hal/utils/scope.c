@@ -89,8 +89,8 @@ static void set_focus(GtkWindow * window, GtkWidget *widget, gpointer * gdata);
 static void quit(int sig);
 static int heartbeat(gpointer data);
 static void rm_normal_button_clicked(GtkWidget * widget, gpointer * gdata);
-static void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata);
-static void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata);
+void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata);
+void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata);
 static void rm_stop_button_clicked(GtkWidget * widget, gpointer * gdata);
 
 static void exit_on_signal(int signum) {
@@ -810,33 +810,19 @@ static void init_run_mode_window(void)
     /* define the radio buttons and group them */
     ctrl_usr->rm_stop_button = gtk_radio_button_new_with_label(NULL, _("Stop"));
     ctrl_usr->rm_normal_button = gtk_radio_button_new_with_label_from_widget(
-            GTK_RADIO_BUTTON(ctrl_usr->rm_stop_button), _("Normal"));
-    ctrl_usr->rm_single_button = gtk_radio_button_new_with_label_from_widget(
-            GTK_RADIO_BUTTON(ctrl_usr->rm_stop_button), _("Single"));
-    ctrl_usr->rm_roll_button = gtk_radio_button_new_with_label_from_widget(
-            GTK_RADIO_BUTTON(ctrl_usr->rm_stop_button), _("Roll"));
+            GTK_RADIO_BUTTON(ctrl_usr->rm_stop_button), _("Run"));
     /* now put them into the box */
     gtk_box_pack_start(GTK_BOX(ctrl_usr->run_mode_win),
 	ctrl_usr->rm_normal_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(ctrl_usr->run_mode_win),
-	ctrl_usr->rm_single_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(ctrl_usr->run_mode_win),
-	ctrl_usr->rm_roll_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ctrl_usr->run_mode_win),
 	ctrl_usr->rm_stop_button, FALSE, FALSE, 0);
     /* hook callbacks to buttons */
     g_signal_connect(ctrl_usr->rm_normal_button, "clicked",
             G_CALLBACK(rm_normal_button_clicked), NULL);
-    g_signal_connect(ctrl_usr->rm_single_button, "clicked",
-            G_CALLBACK(rm_single_button_clicked), NULL);
-    g_signal_connect(ctrl_usr->rm_roll_button, "clicked",
-            G_CALLBACK(rm_roll_button_clicked), NULL);
     g_signal_connect(ctrl_usr->rm_stop_button, "clicked",
             G_CALLBACK(rm_stop_button_clicked), NULL);
     /* and make them visible */
     gtk_widget_show(ctrl_usr->rm_normal_button);
-    gtk_widget_show(ctrl_usr->rm_single_button);
-    gtk_widget_show(ctrl_usr->rm_roll_button);
     gtk_widget_show(ctrl_usr->rm_stop_button);
 }
 
@@ -927,7 +913,7 @@ static void rm_normal_button_clicked(GtkWidget * widget, gpointer * gdata)
     }
 }
 
-static void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata)
+void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata)
 {
     (void)gdata;
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)) != TRUE) {
@@ -940,7 +926,7 @@ static void rm_single_button_clicked(GtkWidget * widget, gpointer * gdata)
     }
 }
 
-static void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata)
+void rm_roll_button_clicked(GtkWidget * widget, gpointer * gdata)
 {
     (void)gdata;
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)) != TRUE) {
