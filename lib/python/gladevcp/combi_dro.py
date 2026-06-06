@@ -56,7 +56,10 @@ class Combi_DRO(Gtk.Box):
     where 0 = X, 1 = Y, 2 = Z, etc.
     '''
 
-    __gtype_name__ = 'Combi_DRO'
+    # omit __gtype_name__ to avoid GType registration conflicts
+    # from circular imports. GTK will auto-generate a unique type name.
+    #__gtype_name__ = 'Combi_DRO'
+    
     __gproperties__ = {
         'joint_number' : (GObject.TYPE_INT, 'Joint Number', '0:X  1:Y  2:Z  etc',
                     0, 8, 0, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
@@ -149,9 +152,10 @@ class Combi_DRO(Gtk.Box):
         self.css_text = """
                         .background  {background-color: #000000;}
                         .labelcolor  {color: #FF0000;}
-                        .size_big    {font-size: 25px;font-weight: bold;}
-                        .size_small  {font-size: 10px;font-weight: bold;}
+                        .size_big    {font-size: 25px;font-weight: bold; font-family:monospace;}
+                        .size_small  {font-size: 10px;font-weight: bold; font-family:monospace;}
                         """
+                        # .monospace   {font-family: monospace;}
 
         self.css = Gtk.CssProvider()
         self.css.load_from_data(bytes(self.css_text, 'utf-8'))
@@ -183,28 +187,29 @@ class Combi_DRO(Gtk.Box):
         vbox_ref_type = Gtk.Box(homogeneous = False, spacing = 0)
         vbox_ref_type.set_orientation(Gtk.Orientation.VERTICAL)
         hbox_up.pack_start(vbox_ref_type, False, False, 0)
-        # This label is needed to press the main index (rel,Abs;Dtg) to the upper part
-        lbl_space = Gtk.Label(label = "")
-        vbox_ref_type.pack_start(lbl_space, True, True, 0)
 
         lbl_sys_main = Gtk.Label(label = self.system)
         lbl_sys_main.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_main.get_style_context().add_class('background')
         lbl_sys_main.get_style_context().add_class('labelcolor')
         lbl_sys_main.get_style_context().add_class("size_small")
-        vbox_ref_type.pack_start(lbl_sys_main, False, False, 0)
+        # lbl_sys_main.get_style_context().add_class('monospace')
+        # lbl_sys_main.override_font(Pango.FontDescription('monospace'))
+        vbox_ref_type.pack_end(lbl_sys_main, False, False, 0)
         self.widgets["lbl_sys_main"] = lbl_sys_main
 
-        main_dro = Gtk.Label(label = "9999.999")
+        main_dro = Gtk.Label(label = "9999.000")
         main_dro.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         main_dro.get_style_context().add_class('background')
         main_dro.get_style_context().add_class('labelcolor')
         main_dro.get_style_context().add_class("size_big")
+        # main_dro.get_style_context().add_class('monospace')
+        # main_dro.override_font(Pango.FontDescription('monospace'))
         main_dro.set_xalign(1.0)
-        hbox_up.pack_start(main_dro, True, True, 0)
+        hbox_up.pack_start(main_dro, False, False, 10)
         self.widgets["main_dro"] = main_dro
 
-        hbox_down = Gtk.Box(homogeneous = True, spacing = 5)
+        hbox_down = Gtk.Box(homogeneous=False, spacing=5)
         vbox_main.pack_start(hbox_down, False, False, 0)
 
         lbl_sys_left = Gtk.Label(label = "Abs")
@@ -213,16 +218,16 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_left.get_style_context().add_class('background')
         lbl_sys_left.get_style_context().add_class('labelcolor')
         lbl_sys_left.get_style_context().add_class('size_small')
-        hbox_down.pack_start(lbl_sys_left, True, True, 0)
+        hbox_down.pack_start(lbl_sys_left, False, False, 0)
         self.widgets["lbl_sys_left"] = lbl_sys_left
 
-        dro_left = Gtk.Label(label = "-11.111")
+        dro_left = Gtk.Label(label = "-11.000")
         dro_left.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_left.get_style_context().add_class('background')
         dro_left.get_style_context().add_class('labelcolor')
         dro_left.get_style_context().add_class('size_small')
-        dro_left.set_xalign(1.0)
-        hbox_down.pack_start(dro_left, True, True, 0)
+        dro_left.set_xalign(0.0)
+        hbox_down.pack_start(dro_left, False, False, 10)
         self.widgets["dro_left"] = dro_left
 
         lbl_sys_right = Gtk.Label(label = "DTG")
@@ -231,16 +236,16 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_right.get_style_context().add_class('background')
         lbl_sys_right.get_style_context().add_class('labelcolor')
         lbl_sys_right.get_style_context().add_class('size_small')
-        hbox_down.pack_start(lbl_sys_right, False, False, 0)
+        hbox_up.pack_start(lbl_sys_right, False, False, 0)
         self.widgets["lbl_sys_right"] = lbl_sys_right
 
-        dro_right = Gtk.Label(label = "22.222")
+        dro_right = Gtk.Label(label = "22.000")
         dro_right.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_right.get_style_context().add_class('background')
         dro_right.get_style_context().add_class('labelcolor')
-        dro_right.get_style_context().add_class('size_small')
+        dro_right.get_style_context().add_class('size_big')
         dro_right.set_xalign(1.0)
-        hbox_down.pack_start(dro_right, True, True, 0)
+        hbox_up.pack_start(dro_right, True, True, 0)
         self.widgets["dro_right"] = dro_right
 
         eventbox.connect("button_press_event", self._on_eventbox_clicked)
@@ -417,9 +422,9 @@ class Combi_DRO(Gtk.Box):
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('size_big')
                 self.widgets[widget].get_style_context().remove_class('size_small')
-            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold;}"
+            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold; font-family: monospace;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][b][i][g].*', replacement_string, self.css_text, re.IGNORECASE)
-            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold;}"
+            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold; font-family: monospace;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][s][m][a][l][l].*', replacement_string, self.css_text, re.IGNORECASE)
 
         else:
@@ -431,7 +436,7 @@ class Combi_DRO(Gtk.Box):
         for widget in self.widgets:
             self.widgets[widget].get_style_context().add_class('background')
             self.widgets[widget].get_style_context().add_class('labelcolor')
-            if widget in ("lbl_axisletter", "main_dro"):
+            if widget in ("lbl_axisletter", "main_dro", "dro_right"):
                 self.widgets[widget].get_style_context().add_class('size_big')
             else:
                 self.widgets[widget].get_style_context().add_class('size_small')
@@ -704,7 +709,7 @@ def main():
 #    MDRO_Y.change_axisletter("D")
     MDRO_Z.connect("clicked", clicked)
     MDRO_C.connect("clicked", clicked)
-    MDRO_C.set_property('mm_text_template', '%10.2f')
+    MDRO_C.set_property('mm_text_template', '%12.3f')
     MDRO_C.set_property('imperial_text_template', '%10.3f')
     MDRO_C.set_property('toggle_readout', False)
     window.show_all()

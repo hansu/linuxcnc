@@ -4021,11 +4021,12 @@ class gmoccapy(object):
         self.dro_digits = int(widget.get_value())
         self.prefs.putpref("dro_digits", self.dro_digits, int)
         if self.stat.program_units != 1:
-            format_string_mm = "%" + str(13 - self.dro_digits) + "." + str(self.dro_digits) + "f"
+            # TODO why switch here with different program_units?
+            format_string_mm = "%" + str(12- self.dro_digits) + "." + str(self.dro_digits) + "f"
             format_string_inch = "%" + str(13 - self.dro_digits - 1) + "." + str(self.dro_digits + 1) + "f"
         else:
             format_string_inch = "%" + str(13 - self.dro_digits) + "." + str(self.dro_digits) + "f"
-            format_string_mm = "%" + str(13 - self.dro_digits + 1) + "." + str(self.dro_digits - 1) + "f"
+            format_string_mm = "%" + str(11 - self.dro_digits + 1) + "." + str(self.dro_digits - 1) + "f"
 
         for dro in self.dro_dic:
             self.dro_dic[dro].set_property("mm_text_template", format_string_mm)
