@@ -90,8 +90,16 @@ sys.excepthook = excepthook
 # constants
 #         # gmoccapy  #"
 _RELEASE = "3.5.2"
-_INCH = 0                         # imperial units are active
-_MM = 1                           # metric units are active
+OFFSETPAGE_INCH = 0
+OFFSETPAGE_MM = 1
+DRO_INCH = 0
+DRO_MM = 1
+LINEAR_UNITS_INCH = 0.03937 #Something close to 0.03937 is deemed INCH
+LINEAR_UNITS_CM = 0.1
+LINEAR_UNITS_MM = 1
+CANON_UNITS_INCHES = 1
+CANON_UNITS_MM = 2
+CANON_UNITS_CM = 3
 
 # set names for the tab numbers, its easier to understand the code
 # Bottom Button Tabs
@@ -617,7 +625,7 @@ class gmoccapy(object):
         # the size and digits of the DRO
         # set default values according to the machine units
         digits = 3
-        if self.stat.linear_units != _MM:
+        if self.stat.linear_units != LINEAR_UNITS_MM:
             digits = 4
         self.dro_digits = self.prefs.getpref("dro_digits", digits, int)
         self.dro_size = self.prefs.getpref("dro_size", 28, int)
@@ -1776,7 +1784,7 @@ class gmoccapy(object):
         self.turtle_jog = self.rabbit_jog / self.turtle_jog_factor
 
         # and according to machine units the digits to display
-        if self.stat.linear_units == _MM:
+        if self.stat.linear_units == LINEAR_UNITS_MM:
             self.widgets.spc_lin_jog_vel.set_digits(0)
             self.widgets.spc_lin_jog_vel.set_property("unit", _("mm/min"))
         else:
@@ -2405,12 +2413,12 @@ class gmoccapy(object):
         self.widgets.offsetpage1.set_filename(path)
 
         self.widgets.offsetpage1.set_display_follows_program_units()
-        if self.stat.program_units != 1:
+        if self.stat.program_units != CANON_UNITS_INCHES:
             self.widgets.offsetpage1.set_to_mm()
-            self.widgets.offsetpage1.machine_units_mm = _MM
+            self.widgets.offsetpage1.machine_units_mm = OFFSETPAGE_MM
         else:
             self.widgets.offsetpage1.set_to_inch()
-            self.widgets.offsetpage1.machine_units_mm = _INCH
+            self.widgets.offsetpage1.machine_units_mm = OFFSETPAGE_INCH
 
         # Modify the button box at the bottom
         buttonbox = self.widgets.offsetpage1.wTree.get_object("buttonbox")
@@ -3251,7 +3259,7 @@ class gmoccapy(object):
         # display units not equal machine units
         if metric_units != int(self.stat.linear_units):
             # machine units = metric
-            if self.stat.linear_units == _MM:
+            if self.stat.linear_units == LINEAR_UNITS_MM:
                 self.faktor = (1.0 / 25.4)
             # machine units = imperial
             else:
@@ -3848,7 +3856,7 @@ class gmoccapy(object):
     def _update_vel(self):
         # self.stat.program_units will return 1 for inch, 2 for mm and 3 for cm
         real_feed = float(self.stat.settings[1] * self.stat.feedrate)
-        if self.stat.program_units != 1:
+        if self.stat.program_units != CANON_UNITS_INCHES:
             self.widgets.lbl_current_vel.set_text("{0:d}".format(int(self.stat.current_vel * 60.0 * self.faktor)))
             if "G95" in self.active_gcodes:
                 feed_str = "{0:d}".format(int(self.stat.settings[1]))
@@ -4020,13 +4028,15 @@ class gmoccapy(object):
             return
         self.dro_digits = int(widget.get_value())
         self.prefs.putpref("dro_digits", self.dro_digits, int)
-        if self.stat.program_units != 1:
-            # TODO why switch here with different program_units?
-            format_string_mm = "%" + str(12- self.dro_digits) + "." + str(self.dro_digits) + "f"
-            format_string_inch = "%" + str(13 - self.dro_digits - 1) + "." + str(self.dro_digits + 1) + "f"
+        print(" self.stat.program_units",  self.stat.program_units)
+        if self.stat.program_units != CANON_UNITS_INCHES:
+            # mm, cm
+            format_string_mm   = f"%{str(6 + self.dro_digits)    }.{str(self.dro_digits)    }f"
+            format_string_inch = f"%{str(6 + self.dro_digits - 1)}.{str(self.dro_digits + 1)}f"
         else:
-            format_string_inch = "%" + str(13 - self.dro_digits) + "." + str(self.dro_digits) + "f"
-            format_string_mm = "%" + str(11 - self.dro_digits + 1) + "." + str(self.dro_digits - 1) + "f"
+            # inch
+            format_string_inch = f"%{str(6 + self.dro_digits)    }.{str(self.dro_digits)    }f"
+            format_string_mm   = f"%{str(6 + self.dro_digits + 1)}.{str(self.dro_digits - 1)}f"
 
         for dro in self.dro_dic:
             self.dro_dic[dro].set_property("mm_text_template", format_string_mm)
@@ -4066,7 +4076,7 @@ class gmoccapy(object):
 
         dro = self.dro_dic["Combi_DRO_{0}".format(joint)]
 
-        if dro.machine_units == _MM:
+        if dro.machine_units == DRO_MM:
             self.widgets.lbl_tool_offset_z.set_text("{0:.3f}".format(self.halcomp["tooloffset-z"]))
             self.widgets.lbl_tool_offset_x.set_text("{0:.3f}".format(self.halcomp["tooloffset-x"]))
         else:
