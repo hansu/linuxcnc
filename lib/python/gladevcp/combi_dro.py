@@ -152,10 +152,10 @@ class Combi_DRO(Gtk.Box):
         self.css_text = """
                         .background  {background-color: #000000;}
                         .labelcolor  {color: #FF0000;}
-                        .size_big    {font-size: 25px;font-weight: bold; font-family:monospace;}
-                        .size_small  {font-size: 10px;font-weight: bold; font-family:monospace;}
+                        .size_big    {font-size: 25px; font-weight: bold; font-family:monospace;}
+                        .size_medium {font-size: 20px; font-weight: bold; font-family:monospace;}
+                        .size_small  {font-size: 10px; font-weight: bold; font-family:monospace;}
                         """
-                        # .monospace   {font-family: monospace;}
 
         self.css = Gtk.CssProvider()
         self.css.load_from_data(bytes(self.css_text, 'utf-8'))
@@ -257,7 +257,7 @@ class Combi_DRO(Gtk.Box):
 
         dro_right = Gtk.Label(label = "22.000")
         dro_right.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        dro_right.get_style_context().add_class('size_big')
+        dro_right.get_style_context().add_class('size_medium')
         dro_right.set_hexpand(True)
         dro_right.set_halign(Gtk.Align.END)
         
@@ -437,11 +437,11 @@ class Combi_DRO(Gtk.Box):
         elif property == "size":
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('size_big')
+                self.widgets[widget].get_style_context().remove_class('size_medium')
                 self.widgets[widget].get_style_context().remove_class('size_small')
-            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold; font-family: monospace;}"
-            self.css_text = re.sub(r'[.][s][i][z][e][_][b][i][g].*', replacement_string, self.css_text, re.IGNORECASE)
-            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold; font-family: monospace;}"
-            self.css_text = re.sub(r'[.][s][i][z][e][_][s][m][a][l][l].*', replacement_string, self.css_text, re.IGNORECASE)
+            self.css_text = re.sub(r'(\.size_big\s*   \{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data}px',     self.css_text)
+            self.css_text = re.sub(r'(\.size_medium\s*\{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data*0.8}px', self.css_text)
+            self.css_text = re.sub(r'(\.size_small\s* \{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data*0.4}px', self.css_text)
 
         else:
             print("Got unknown property in <<set_style>>")
@@ -452,8 +452,10 @@ class Combi_DRO(Gtk.Box):
         for widget in self.widgets:
             self.widgets[widget].get_style_context().add_class('background')
             self.widgets[widget].get_style_context().add_class('labelcolor')
-            if widget in ("lbl_axisletter", "main_dro", "dro_right"):
+            if widget in ("lbl_axisletter", "main_dro"):
                 self.widgets[widget].get_style_context().add_class('size_big')
+            elif widget == "dro_right":
+                self.widgets[widget].get_style_context().add_class('size_medium')
             else:
                 self.widgets[widget].get_style_context().add_class('size_small')
 
