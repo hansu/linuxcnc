@@ -708,7 +708,7 @@ class gmoccapy(object):
             dro.connect("clicked", self._on_DRO_clicked)
             dro.connect('axis_clicked', self._on_DRO_axis_clicked)
             self.dro_dic[dro.get_property("name")] = dro
-#            print dro.name
+        self.dro_set_format_string()
 
     def _get_RGBA_color(self, color_str):
         color = Gdk.RGBA()
@@ -4024,19 +4024,19 @@ class gmoccapy(object):
 # =========================================================
 
     def on_adj_dro_digits_value_changed(self, widget, data=None):
-        if not self.initialized:
-            return
         self.dro_digits = int(widget.get_value())
         self.prefs.putpref("dro_digits", self.dro_digits, int)
-        print(" self.stat.program_units",  self.stat.program_units)
+        self.dro_set_format_string()
+    
+    def dro_set_format_string(self):
         if self.stat.program_units != CANON_UNITS_INCHES:
             # mm, cm
-            format_string_mm   = f"%{str(6 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_inch = f"%{str(6 + self.dro_digits - 1)}.{str(self.dro_digits + 1)}f"
+            format_string_mm   = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
+            format_string_inch = f"%{str(5 + self.dro_digits - 1)}.{str(self.dro_digits + 1)}f"
         else:
             # inch
-            format_string_inch = f"%{str(6 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_mm   = f"%{str(6 + self.dro_digits + 1)}.{str(self.dro_digits - 1)}f"
+            format_string_inch = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
+            format_string_mm   = f"%{str(5 + self.dro_digits + 1)}.{str(self.dro_digits - 1)}f"
 
         for dro in self.dro_dic:
             self.dro_dic[dro].set_property("mm_text_template", format_string_mm)
