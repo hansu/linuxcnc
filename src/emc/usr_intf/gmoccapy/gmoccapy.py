@@ -708,6 +708,12 @@ class gmoccapy(object):
             dro.connect("clicked", self._on_DRO_clicked)
             dro.connect('axis_clicked', self._on_DRO_axis_clicked)
             self.dro_dic[dro.get_property("name")] = dro
+            
+        print("axes:",self.axis_list)
+        # for axis self.axis_list:
+        # get TRAJ min, max limit - > calc travel
+        max_travel = 200
+        self.dro_int_digits = len(str(int(abs(max_travel))))
         self.dro_set_format_string()
 
     def _get_RGBA_color(self, color_str):
@@ -4029,14 +4035,15 @@ class gmoccapy(object):
         self.dro_set_format_string()
     
     def dro_set_format_string(self):
+        width = self.dro_int_digits + 2 + self.dro_digits
         if self.stat.program_units != CANON_UNITS_INCHES:
             # mm, cm
-            format_string_mm   = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_inch = f"%{str(5 + self.dro_digits - 1)}.{str(self.dro_digits + 1)}f"
+            format_string_mm   = f"%{str(width)    }.{str(self.dro_digits)    }f"
+            format_string_inch = f"%{str(width - 1)}.{str(self.dro_digits + 1)}f"
         else:
             # inch
-            format_string_inch = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_mm   = f"%{str(5 + self.dro_digits + 1)}.{str(self.dro_digits - 1)}f"
+            format_string_inch = f"%{str(width)    }.{str(self.dro_digits)    }f"
+            format_string_mm   = f"%{str(width + 1)}.{str(self.dro_digits - 1)}f"
 
         for dro in self.dro_dic:
             self.dro_dic[dro].set_property("mm_text_template", format_string_mm)
