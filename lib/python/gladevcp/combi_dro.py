@@ -297,9 +297,7 @@ class Combi_DRO(Gtk.Box):
     # or just emit a signal to allow GUI to do what ever they want with that
     # signal- gmoccapy uses this signal to open the touch off dialog
     def _on_eventbox_clicked(self, widget, event):
-        sensible_width = self.widgets["lbl_axisletter"].get_allocation().width \
-                      + self.widgets["lbl_sys_main"].get_allocation().width \
-                      + self.margin_left
+        sensible_width = self.widgets["grid_left"].get_allocation().width
         if event.x <= sensible_width:
             self.emit('axis_clicked', self.widgets["lbl_axisletter"].get_text().lower())
             #self.set_style("labelcolor", "#00FF00")
