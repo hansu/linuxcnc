@@ -163,6 +163,7 @@ class Combi_DRO(Gtk.Box):
         eventbox = Gtk.EventBox()
         eventbox.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         eventbox.get_style_context().add_class('background')
+        eventbox.set_hexpand(True)
         self.widgets["eventbox"] = eventbox
         self.add(eventbox)
         
