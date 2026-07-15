@@ -508,15 +508,15 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             self.dim.set_visual(visual)
 
         window, px, py = parent.get_window().get_origin()
+        mainwindow_w, mainwindow_h = parent.get_size()
         
         # On Wayland get_origin() always returns (0, 0) - maximize the dim window in this case.
         # Most probably the window is also in full screen if it is located at (0, 0).
         if (px == 0 and py == 0):
             self.dim.maximize()
         else:
-            pw, ph = parent.get_size()
             self.dim.move(px, py)
-            self.dim.resize(pw, ph)
+            self.dim.resize(mainwindow_w, mainwindow_h)
 
         area = Gtk.EventBox()
         area.set_visible_window(False)
@@ -555,15 +555,24 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         self.popup.set_decorated(False)
         self.popup.set_keep_above(True)
         
-        # parent widget center position
-        wx, wy = self._get_widget_screen_position()
+        
         # popup widget size
         pw = self.draw.get_allocated_width() * 3
         ph = self._size
+        
+        if False:
+            # parent widget center position
+            wx, wy = self._get_widget_screen_position()
+            
+        else:
+            wx = px + mainwindow_w/2
+            wy = py + mainwindow_h/2
+        
+        # move popup window absolute (not needed under X11)
         self.popup.move(wx - int(pw / 2), wy - int(ph / 2))
+        print("move", wx - int(pw / 2), wy - int(ph / 2))
         
         self.popup.set_title("Adjust Value")
-        # popup.set_default_size(600, 120)
 
         popup_control = SpeedControl(enablePressEvent = False)
         
