@@ -478,6 +478,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
     def _get_widget_screen_position(self):
         toplevel = self.get_toplevel()
         px, py = toplevel.get_position()
+        print("toplevel xy", px, py)
         # position inside window
         wx, wy = self.translate_coordinates(toplevel, 0, 0)
         alloc = self.get_allocation()
@@ -508,6 +509,8 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             self.dim.set_visual(visual)
 
         window, px, py = parent.get_window().get_origin()
+        
+        print("screen pos 1", px, py)
         
         # On Wayland get_origin() always returns (0, 0) - maximize the dim window in this case.
         # Most probably the window is also in full screen if it is located at (0, 0).
@@ -576,6 +579,9 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             self.draw.get_allocated_width() * 3,
             self._size
         )
+
+        # Why is it centered unter X11? Or just not up-to-date here??
+        #self.popup.move(400, 400)
 
         # enable dragging
         popup_control.draw.add_events(
