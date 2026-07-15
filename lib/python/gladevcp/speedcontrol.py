@@ -550,10 +550,9 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         # =========================================================
         self.popup = Gtk.Window()
         self.popup.set_modal(False)
-        self.popup.set_transient_for(parent)
+        self.popup.set_transient_for(self.dim)  # Make popup child of dim window
         #self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
         self.popup.set_decorated(False)
-        self.popup.set_keep_above(True)
         
         
         # popup widget size
@@ -568,7 +567,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
             wx = px + mainwindow_w/2
             wy = py + mainwindow_h/2
         
-        # move popup window absolute (not needed under X11)
+        # move popup window to center (after window is realized)
         self.popup.move(wx - int(pw / 2), wy - int(ph / 2))
         print("move", wx - int(pw / 2), wy - int(ph / 2))
         
@@ -613,8 +612,7 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
 
         # FORCE STACK ORDER
         def raise_order():
-            self.dim.present()
-            self.popup.present()   # MUST be after dim
+            self.popup.present()
 
         GLib.idle_add(raise_order)
         
