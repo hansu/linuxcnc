@@ -475,6 +475,15 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
             self._open_popup()
  
+    def _get_widget_screen_position(self):
+        toplevel = self.get_toplevel()
+        px, py = toplevel.get_position()
+        # position inside window
+        wx, wy = self.translate_coordinates(toplevel, 0, 0)
+        alloc = self.get_allocation()
+        cx = px + wx + alloc.width / 2
+        cy = py + wy + alloc.height / 2
+        return cx, cy
 
     def _open_popup(self):
         if self.popup is not None:
@@ -483,6 +492,13 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         self.popup.set_modal(False)
         self.popup.set_transient_for(self.get_toplevel())
         self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
+        
+        # parent widget center position
+        wx, wy = self._get_widget_screen_position()
+        # popup widget size
+        pw = self.draw.get_allocated_width() * 3
+        ph = self._size
+        self.popup.move(wx - int(pw / 2), wy - int(ph / 2))
         
         self.popup.set_title("Adjust Value")
         # popup.set_default_size(600, 120)
