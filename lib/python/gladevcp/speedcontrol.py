@@ -486,12 +486,74 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         return cx, cy
 
     def _open_popup(self):
+        
+        # not needed for single widget
         if self.popup is not None:
             return
+
+        parent = self.get_toplevel()
+
+        # =========================================================
+        # DIM WINDOW
+        # =========================================================
+        self.dim = Gtk.Window()
+        self.dim.set_decorated(False)
+        self.dim.set_keep_above(True)
+        self.dim.set_transient_for(parent)
+        self.dim.set_app_paintable(True)
+        
+        screen = Gdk.Screen.get_default()
+        visual = screen.get_rgba_visual()
+        if visual is not None:
+            self.dim.set_visual(visual)
+
+        window, px, py = parent.get_window().get_origin()
+        
+        # On Wayland get_origin() always returns (0, 0) - maximize the dim window in this case.
+        # Most probably the window is also in full screen if it is located at (0, 0).
+        if (px == 0 and py == 0):
+            self.dim.maximize()
+        else:
+            pw, ph = parent.get_size()
+            self.dim.move(px, py)
+            self.dim.resize(pw, ph)
+
+        area = Gtk.EventBox()
+        area.set_visible_window(False)
+        self.dim.add(area)
+
+        def draw_dim(widget, cr):
+            alloc = widget.get_allocation()
+            cr.set_source_rgba(0, 0, 0, 0.5)
+            cr.rectangle(0, 0, alloc.width, alloc.height)
+            cr.fill()
+            return False
+
+        area.connect("draw", draw_dim)
+
+        def close_all(widget, event):
+            if self.popup:
+                self.popup.destroy()
+                self.popup = None
+            if self.dim:
+                self.dim.destroy()
+                self.dim = None
+            return True
+
+        area.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        area.connect("button-press-event", close_all)
+
+        self.dim.show_all()
+
+        # =========================================================
+        # POPUP WINDOW
+        # =========================================================
         self.popup = Gtk.Window()
         self.popup.set_modal(False)
-        self.popup.set_transient_for(self.get_toplevel())
-        self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
+        self.popup.set_transient_for(parent)
+        #self.popup.connect("destroy", lambda w: setattr(self, "popup", None))
+        self.popup.set_decorated(False)
+        self.popup.set_keep_above(True)
         
         # parent widget center position
         wx, wy = self._get_widget_screen_position()
@@ -540,7 +602,13 @@ class SpeedControl(Gtk.Box, _HalSpeedControlBase):
         #popup.connect("delete-event", lambda w, e: w.destroy() or False)
         self.popup.show_all()
 
+        # FORCE STACK ORDER
+        def raise_order():
+            self.dim.present()
+            self.popup.present()   # MUST be after dim
 
+        GLib.idle_add(raise_order)
+        
     def _on_drag_motion(self, widget, event):
         if event.state & Gdk.ModifierType.BUTTON1_MASK:
             x = max(0, min(event.x, widget.get_allocated_width()))
