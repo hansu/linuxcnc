@@ -149,8 +149,8 @@ class Combi_DRO(Gtk.Box):
         self.css_text = """
                         .background  {background-color: #000000;}
                         .labelcolor  {color: #FF0000;}
-                        .size_big    {font-size: 25px;font-weight: bold;}
-                        .size_small  {font-size: 10px;font-weight: bold;}
+                        .size_big    {font-size: 25px;font-weight: bold; font-family:monospace;}
+                        .size_small  {font-size: 10px;font-weight: bold; font-family:monospace;}
                         """
 
         self.css = Gtk.CssProvider()
@@ -417,9 +417,9 @@ class Combi_DRO(Gtk.Box):
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('size_big')
                 self.widgets[widget].get_style_context().remove_class('size_small')
-            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold;}"
+            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold; font-family: monospace;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][b][i][g].*', replacement_string, self.css_text, re.IGNORECASE)
-            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold;}"
+            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold; font-family: monospace;}"
             self.css_text = re.sub(r'[.][s][i][z][e][_][s][m][a][l][l].*', replacement_string, self.css_text, re.IGNORECASE)
 
         else:
