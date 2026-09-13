@@ -56,7 +56,10 @@ class Combi_DRO(Gtk.Box):
     where 0 = X, 1 = Y, 2 = Z, etc.
     '''
 
-    __gtype_name__ = 'Combi_DRO'
+    # omit __gtype_name__ to avoid GType registration conflicts
+    # from circular imports. GTK will auto-generate a unique type name.
+    #__gtype_name__ = 'Combi_DRO'
+    
     __gproperties__ = {
         'joint_number' : (GObject.TYPE_INT, 'Joint Number', '0:X  1:Y  2:Z  etc',
                     0, 8, 0, GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT),
@@ -149,8 +152,9 @@ class Combi_DRO(Gtk.Box):
         self.css_text = """
                         .background  {background-color: #000000;}
                         .labelcolor  {color: #FF0000;}
-                        .size_big    {font-size: 25px;font-weight: bold; font-family:monospace;}
-                        .size_small  {font-size: 10px;font-weight: bold; font-family:monospace;}
+                        .size_big    {font-size: 25px; font-weight: bold; font-family:monospace;}
+                        .size_medium {font-size: 20px; font-weight: bold; font-family:monospace;}
+                        .size_small  {font-size: 10px; font-weight: bold; font-family:monospace;}
                         """
 
         self.css = Gtk.CssProvider()
@@ -159,88 +163,106 @@ class Combi_DRO(Gtk.Box):
         eventbox = Gtk.EventBox()
         eventbox.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         eventbox.get_style_context().add_class('background')
-        self.add(eventbox)
-        vbox_main = Gtk.Box(homogeneous = False, spacing = 0)
-        vbox_main.set_orientation(Gtk.Orientation.VERTICAL)
-        eventbox.add(vbox_main)
-        hbox_up = Gtk.Box(homogeneous = False, spacing = 5)
-        hbox_up.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        hbox_up.get_style_context().add_class('background')
-        vbox_main.pack_start(hbox_up, True, True, 0)
-        vbox_main.set_margin_start(self.margin_left)
-        vbox_main.set_margin_end(self.margin_right)
-        self.widgets["hbox_up"] = hbox_up
+        eventbox.set_hexpand(True)
         self.widgets["eventbox"] = eventbox
+        self.add(eventbox)
+        
+        hbox_main = Gtk.Box(homogeneous = True, spacing = 0)
+        eventbox.add(hbox_main)
+        
+        grid_left = Gtk.Grid()
+        grid_left.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        grid_left.get_style_context().add_class('background')
+        grid_left.get_style_context().add_class('labelcolor')
+        grid_left.set_column_spacing(0)
+        grid_left.set_row_spacing(0)
+        grid_left.set_margin_start(self.margin_left)
+        grid_left.set_margin_end(self.margin_right)
+        grid_left.set_margin_bottom(3)
+        grid_left.set_hexpand(False)
+        grid_left.set_hexpand_set(True)
+        self.widgets["grid_left"] = grid_left
+        
+        grid = Gtk.Grid()
+        grid.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        grid.get_style_context().add_class('background')
+        grid.get_style_context().add_class('labelcolor')
+        grid.set_column_spacing(10)
+        grid.set_row_spacing(0)
+        grid.set_margin_start(self.margin_left)
+        grid.set_margin_end(self.margin_right)
+        grid.set_margin_bottom(3)
+        grid.set_hexpand(False)
+        grid.set_hexpand_set(True)
+        hbox_main.pack_start(grid_left, True, True, 0)
+        hbox_main.pack_start(grid, True, True, 0)
 
-        lbl_axisletter = Gtk.Label(label = _AXISLETTERS[self.axis_no])
-        lbl_axisletter.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        lbl_axisletter.get_style_context().add_class('background')
-        lbl_axisletter.get_style_context().add_class('labelcolor')
+        # -------------------------------------------------
+        # Axis Letter (X,Y,Z...)
+        # -------------------------------------------------
+        lbl_axisletter = Gtk.Label(label=_AXISLETTERS[self.axis_no])
+        lbl_axisletter.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_axisletter.get_style_context().add_class('size_big')
-        hbox_up.pack_start(lbl_axisletter, False, False, 0)
+        grid_left.attach(lbl_axisletter, 0, 0, 1, 1)
         self.widgets["lbl_axisletter"] = lbl_axisletter
 
-        vbox_ref_type = Gtk.Box(homogeneous = False, spacing = 0)
-        vbox_ref_type.set_orientation(Gtk.Orientation.VERTICAL)
-        hbox_up.pack_start(vbox_ref_type, False, False, 0)
-        # This label is needed to press the main index (rel,Abs;Dtg) to the upper part
-        lbl_space = Gtk.Label(label = "")
-        vbox_ref_type.pack_start(lbl_space, True, True, 0)
-
-        lbl_sys_main = Gtk.Label(label = self.system)
-        lbl_sys_main.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        lbl_sys_main.get_style_context().add_class('background')
-        lbl_sys_main.get_style_context().add_class('labelcolor')
-        lbl_sys_main.get_style_context().add_class("size_small")
-        vbox_ref_type.pack_start(lbl_sys_main, False, False, 0)
+        # -------------------------------------------------
+        # Main
+        # -------------------------------------------------
+        lbl_sys_main = Gtk.Label(label=self.system)
+        lbl_sys_main.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        lbl_sys_main.set_valign(Gtk.Align.END)
+        lbl_sys_main.get_style_context().add_class('size_small')
+        grid_left.attach(lbl_sys_main, 0, 1, 1, 1)
         self.widgets["lbl_sys_main"] = lbl_sys_main
+        
+        lbl_axisletter.set_halign(Gtk.Align.START)
+        lbl_sys_main.set_halign(Gtk.Align.START)
 
-        main_dro = Gtk.Label(label = "9999.999")
-        main_dro.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        main_dro.get_style_context().add_class('background')
-        main_dro.get_style_context().add_class('labelcolor')
-        main_dro.get_style_context().add_class("size_big")
-        main_dro.set_xalign(1.0)
-        hbox_up.pack_start(main_dro, True, True, 0)
+
+        main_dro = Gtk.Label(label = "9999.000")
+        main_dro.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        main_dro.get_style_context().add_class('size_big')
+        # main_dro.set_xalign(1.0)
+        # main_dro.set_margin_end(10)
+        main_dro.set_hexpand(True)
+        main_dro.set_halign(Gtk.Align.END)
+        
+        grid_left.attach(main_dro, 2, 0, 1, 1)
         self.widgets["main_dro"] = main_dro
-
-        hbox_down = Gtk.Box(homogeneous = True, spacing = 5)
-        vbox_main.pack_start(hbox_down, False, False, 0)
-
-        lbl_sys_left = Gtk.Label(label = "Abs")
-        lbl_sys_left.set_xalign(0.0)
-        lbl_sys_left.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        lbl_sys_left.get_style_context().add_class('background')
-        lbl_sys_left.get_style_context().add_class('labelcolor')
+        
+        # -------------------------------------------------
+        # ABS
+        # -------------------------------------------------
+        lbl_sys_left = Gtk.Label(label="Abs")
+        lbl_sys_left.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_left.get_style_context().add_class('size_small')
-        hbox_down.pack_start(lbl_sys_left, True, True, 0)
+        grid.attach(lbl_sys_left, 3, 1, 1, 1)
         self.widgets["lbl_sys_left"] = lbl_sys_left
-
-        dro_left = Gtk.Label(label = "-11.111")
-        dro_left.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        dro_left.get_style_context().add_class('background')
-        dro_left.get_style_context().add_class('labelcolor')
+        
+        dro_left = Gtk.Label(label = "-11.000")
+        dro_left.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_left.get_style_context().add_class('size_small')
-        dro_left.set_xalign(1.0)
-        hbox_down.pack_start(dro_left, True, True, 0)
+        dro_left.set_halign(Gtk.Align.END)
+        grid.attach(dro_left, 4, 1, 1, 1)
         self.widgets["dro_left"] = dro_left
 
-        lbl_sys_right = Gtk.Label(label = "DTG")
-        lbl_sys_right.set_xalign(0.0)
-        lbl_sys_right.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        lbl_sys_right.get_style_context().add_class('background')
-        lbl_sys_right.get_style_context().add_class('labelcolor')
+        # -------------------------------------------------
+        # DTG
+        # -------------------------------------------------
+        lbl_sys_right = Gtk.Label(label="DTG")
+        lbl_sys_right.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_right.get_style_context().add_class('size_small')
-        hbox_down.pack_start(lbl_sys_right, False, False, 0)
+        grid.attach(lbl_sys_right, 3, 0, 1, 1)
         self.widgets["lbl_sys_right"] = lbl_sys_right
 
-        dro_right = Gtk.Label(label = "22.222")
-        dro_right.get_style_context().add_provider(self.css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        dro_right.get_style_context().add_class('background')
-        dro_right.get_style_context().add_class('labelcolor')
-        dro_right.get_style_context().add_class('size_small')
-        dro_right.set_xalign(1.0)
-        hbox_down.pack_start(dro_right, True, True, 0)
+        dro_right = Gtk.Label(label = "22.000")
+        dro_right.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        dro_right.get_style_context().add_class('size_medium')
+        dro_right.set_hexpand(True)
+        dro_right.set_halign(Gtk.Align.END)
+        
+        grid.attach(dro_right, 4, 0, 1, 1)
         self.widgets["dro_right"] = dro_right
 
         eventbox.connect("button_press_event", self._on_eventbox_clicked)
@@ -276,9 +298,7 @@ class Combi_DRO(Gtk.Box):
     # or just emit a signal to allow GUI to do what ever they want with that
     # signal- gmoccapy uses this signal to open the touch off dialog
     def _on_eventbox_clicked(self, widget, event):
-        sensible_width = self.widgets["lbl_axisletter"].get_allocation().width \
-                      + self.widgets["lbl_sys_main"].get_allocation().width \
-                      + self.widgets["hbox_up"].get_spacing() + self.margin_left
+        sensible_width = self.widgets["grid_left"].get_allocation().width
         if event.x <= sensible_width:
             self.emit('axis_clicked', self.widgets["lbl_axisletter"].get_text().lower())
             #self.set_style("labelcolor", "#00FF00")
@@ -416,11 +436,11 @@ class Combi_DRO(Gtk.Box):
         elif property == "size":
             for widget in self.widgets:
                 self.widgets[widget].get_style_context().remove_class('size_big')
+                self.widgets[widget].get_style_context().remove_class('size_medium')
                 self.widgets[widget].get_style_context().remove_class('size_small')
-            replacement_string = ".size_big    {font-size: " + str(Data) + "px;font-weight: bold; font-family: monospace;}"
-            self.css_text = re.sub(r'[.][s][i][z][e][_][b][i][g].*', replacement_string, self.css_text, re.IGNORECASE)
-            replacement_string = ".size_small    {font-size: " + str(int(Data / 2.5)) + "px;font-weight: bold; font-family: monospace;}"
-            self.css_text = re.sub(r'[.][s][i][z][e][_][s][m][a][l][l].*', replacement_string, self.css_text, re.IGNORECASE)
+            self.css_text = re.sub(r'(\.size_big\s*   \{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data}px',     self.css_text)
+            self.css_text = re.sub(r'(\.size_medium\s*\{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data*0.8}px', self.css_text)
+            self.css_text = re.sub(r'(\.size_small\s* \{\s*font-size:\s*)\d+(?:\.\d+)?px', rf'\g<1>{Data*0.4}px', self.css_text)
 
         else:
             print("Got unknown property in <<set_style>>")
@@ -433,6 +453,8 @@ class Combi_DRO(Gtk.Box):
             self.widgets[widget].get_style_context().add_class('labelcolor')
             if widget in ("lbl_axisletter", "main_dro"):
                 self.widgets[widget].get_style_context().add_class('size_big')
+            elif widget == "dro_right":
+                self.widgets[widget].get_style_context().add_class('size_medium')
             else:
                 self.widgets[widget].get_style_context().add_class('size_small')
 
@@ -681,7 +703,7 @@ class Combi_DRO(Gtk.Box):
 def main():
     window = Gtk.Window(type = Gtk.WindowType.TOPLEVEL)
 
-    vbox = Gtk.Box(homogeneous = False, spacing = 5)
+    vbox = Gtk.Box(homogeneous = False, spacing = 0)
     vbox.set_orientation(Gtk.Orientation.VERTICAL)
     MDRO_X = Combi_DRO(0)
     MDRO_Y = Combi_DRO(1)
@@ -704,7 +726,7 @@ def main():
 #    MDRO_Y.change_axisletter("D")
     MDRO_Z.connect("clicked", clicked)
     MDRO_C.connect("clicked", clicked)
-    MDRO_C.set_property('mm_text_template', '%10.2f')
+    MDRO_C.set_property('mm_text_template', '%12.3f')
     MDRO_C.set_property('imperial_text_template', '%10.3f')
     MDRO_C.set_property('toggle_readout', False)
     window.show_all()
