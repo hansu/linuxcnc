@@ -167,7 +167,7 @@ class Combi_DRO(Gtk.Box):
         self.widgets["eventbox"] = eventbox
         self.add(eventbox)
         
-        hbox_main = Gtk.Box(homogeneous = True, spacing = 0)
+        hbox_main = Gtk.Box(homogeneous = False, spacing = 0)
         eventbox.add(hbox_main)
         
         grid_left = Gtk.Grid()
@@ -203,7 +203,7 @@ class Combi_DRO(Gtk.Box):
         lbl_axisletter = Gtk.Label(label=_AXISLETTERS[self.axis_no])
         lbl_axisletter.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_axisletter.get_style_context().add_class('size_big')
-        grid_left.attach(lbl_axisletter, 0, 0, 1, 1)
+        grid_left.attach(lbl_axisletter, 1, 0, 1, 2)
         self.widgets["lbl_axisletter"] = lbl_axisletter
 
         # -------------------------------------------------
@@ -213,12 +213,17 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_main.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_main.set_valign(Gtk.Align.END)
         lbl_sys_main.get_style_context().add_class('size_small')
-        grid_left.attach(lbl_sys_main, 0, 1, 1, 1)
+        grid_left.attach(lbl_sys_main, 0, 0, 1, 2)
         self.widgets["lbl_sys_main"] = lbl_sys_main
         
-        lbl_axisletter.set_halign(Gtk.Align.START)
         lbl_sys_main.set_halign(Gtk.Align.START)
+        lbl_sys_main.set_halign(Gtk.Align.START)
+        lbl_sys_main.set_margin_end(10)
+        lbl_sys_main.set_margin_top(3)
+        lbl_axisletter.set_halign(Gtk.Align.START)
+        lbl_sys_main.set_valign(Gtk.Align.START)
 
+        lbl_axisletter.set_valign(Gtk.Align.START)
 
         main_dro = Gtk.Label(label = "9999.000")
         main_dro.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -227,8 +232,9 @@ class Combi_DRO(Gtk.Box):
         # main_dro.set_margin_end(10)
         main_dro.set_hexpand(True)
         main_dro.set_halign(Gtk.Align.END)
+        #main_dro.set_valign(Gtk.Align.CENTER)
         
-        grid_left.attach(main_dro, 2, 0, 1, 1)
+        grid_left.attach(main_dro, 2, 0, 1, 2)
         self.widgets["main_dro"] = main_dro
         
         # -------------------------------------------------
@@ -516,6 +522,8 @@ class Combi_DRO(Gtk.Box):
         self.widgets["main_dro"].set_label(main_dro)
         self.widgets["dro_left"].set_label(left_dro)
         self.widgets["dro_right"].set_label(right_dro)
+        #self.widgets["dro_left"].set_visible(False)
+        #self.widgets["dro_right"].set_visible(False)
         self.widgets["lbl_sys_left"].set_visible(False)
         self.widgets["dro_left"].set_visible(False)
         self.dtg = dtg * scale
