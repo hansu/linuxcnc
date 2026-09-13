@@ -516,6 +516,8 @@ class Combi_DRO(Gtk.Box):
         self.widgets["main_dro"].set_label(main_dro)
         self.widgets["dro_left"].set_label(left_dro)
         self.widgets["dro_right"].set_label(right_dro)
+        self.widgets["lbl_sys_left"].set_visible(False)
+        self.widgets["dro_left"].set_visible(False)
         self.dtg = dtg * scale
         self.abs_pos = abs_pos * scale
         self.rel_pos = rel_pos * scale
