@@ -721,6 +721,17 @@ class gmoccapy(object):
             dro.connect("clicked", self._on_DRO_clicked)
             dro.connect('axis_clicked', self._on_DRO_axis_clicked)
             self.dro_dic[dro.get_property("name")] = dro
+            
+        # Determine travel of largest axis to set DRO character width
+        max_travel = 0
+        for i, val in enumerate(self.axis_list):
+            travel = self.stat.axis[i]['max_position_limit'] - self.stat.axis[i]['min_position_limit']
+            # If no limits are configured, the lmits are read as +-1e99. TODO: Maybe better ckeck if configured in [TRAJ].
+            if 1e99 > travel > max_travel: max_travel = travel
+        
+        # DRO digits before comma
+        self.dro_left_digits = len(str(int(abs(max_travel))))
+
         self.dro_set_format_string()
 
     def _get_RGBA_color(self, color_str):
@@ -4047,14 +4058,16 @@ class gmoccapy(object):
         self.dro_set_format_string()
     
     def dro_set_format_string(self):
+        # Total dro width including comma and sign
+        dro_width = self.dro_left_digits + 2 + self.dro_digits
         if self.stat.program_units != CANON_UNITS_INCHES:
             # mm, cm
-            format_string_mm   = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_inch = f"%{str(5 + self.dro_digits - 1)}.{str(self.dro_digits + 1)}f"
+            format_string_mm   = f"%{str(dro_width)    }.{str(self.dro_digits)    }f"
+            format_string_inch = f"%{str(dro_width - 1)}.{str(self.dro_digits + 1)}f"
         else:
             # inch
-            format_string_inch = f"%{str(5 + self.dro_digits)    }.{str(self.dro_digits)    }f"
-            format_string_mm   = f"%{str(5 + self.dro_digits + 1)}.{str(self.dro_digits - 1)}f"
+            format_string_inch = f"%{str(dro_width)    }.{str(self.dro_digits)    }f"
+            format_string_mm   = f"%{str(dro_width + 1)}.{str(self.dro_digits - 1)}f"
 
         for dro in self.dro_dic:
             self.dro_dic[dro].set_property("mm_text_template", format_string_mm)
