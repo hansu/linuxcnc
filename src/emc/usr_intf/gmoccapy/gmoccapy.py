@@ -1565,17 +1565,11 @@ class gmoccapy(object):
             LOG.debug("Place DRO 3x2")
             dro_order = self._get_DRO_order()
             for dro, dro_name in enumerate(dro_order):
-                if dro < 3:
+                if dro > 4:
                     size = self.dro_size * 0.75
-                    if attach:
-                        self.widgets.grid_DRO.attach(self.dro_dic[dro_name], 0, int(dro), 2, 1)
-                else:
-                    size = self.dro_size * 0.65
-                    if attach:
-                        if dro == 3:
-                            self.widgets.grid_DRO.attach(self.dro_dic[dro_name], 0, int(dro), 1, 1)
-                        else:
-                            self.widgets.grid_DRO.attach(self.dro_dic[dro_name], 1, int(dro-1), 1, 1)
+                if attach:
+                    self.widgets.grid_DRO.attach(self.dro_dic[dro_name], 0, int(dro), 2, 1)
+            
                 self.dro_dic[dro_name].set_property("font_size", size)
 
         def _place_in_table(cols, dro_size, attach):
@@ -1603,22 +1597,13 @@ class gmoccapy(object):
         
         # if we have less than 4 axis, we can resize the table, as we have
         # enough space to display each one in it's own line
-        if len(self.dro_dic) < 4:
+        if len(self.dro_dic) < 5:
             _place_in_table(1, self.dro_size, attach)
-
-        # having 4 DRO we need to reduce the size, to fit the available space
-        elif len(self.dro_dic) == 4:
-            _place_in_table(1, self.dro_size * 0.75, attach)
-
-        # having 5 axis we will display 3 in an one line and two DRO share
-        # the last line, the size of the DRO must be reduced also
-        # this is a special case so we do not use _place_in_table
-        elif len(self.dro_dic) == 5:
-            _place_special(attach)
-
+        elif len(self.dro_dic) < 6:
+            _place_in_table(1, self.dro_size * 0.8, attach)
         else:
             LOG.debug("DRO: more than 5 axes ")
-            _place_in_table(2, self.dro_size * 0.65, attach)
+            _place_in_table(2, self.dro_size * 0.8, attach)
 
         # set values to dro size adjustments
         self.widgets.adj_dro_size.set_value(self.dro_size)
