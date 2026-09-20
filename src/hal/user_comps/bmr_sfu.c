@@ -115,9 +115,16 @@ static int64_t monotonic_ms(void)
 
 static int configure_serial(const char *port)
 {
-    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
+    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC | O_NONBLOCK);
     if (fd < 0) {
         fprintf(stderr, "open(%s): %s\n", port, strerror(errno));
+        return -1;
+    }
+
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        fprintf(stderr, "fcntl(F_SETFL, O_NONBLOCK): %s\n", strerror(errno));
+        close(fd);
         return -1;
     }
 
@@ -166,7 +173,27 @@ static int write_all(const uint8_t *data, size_t len)
         if (n < 0) {
             if (errno == EINTR)
                 continue;
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                struct pollfd pfd = {
+                    .fd = serial_fd,
+                    .events = POLLOUT,
+                    .revents = 0
+                };
+                if (poll(&pfd, 1, 50) <= 0) {
+                    fprintf(stderr, "serial write: %s\n", strerror(errno));
+                    if (serial_fd >= 0) {
+                        close(serial_fd);
+                        serial_fd = -1;
+                    }
+                    return -1;
+                }
+                continue;
+            }
             fprintf(stderr, "serial write: %s\n", strerror(errno));
+            if (serial_fd >= 0) {
+                close(serial_fd);
+                serial_fd = -1;
+            }
             return -1;
         }
         sent += (size_t)n;
@@ -174,7 +201,12 @@ static int write_all(const uint8_t *data, size_t len)
 
     /* Equivalent to pyserial's flush(): wait until bytes have left the driver. */
     if (tcdrain(serial_fd) != 0) {
-        fprintf(stderr, "tcdrain: %s\n", strerror(errno));
+        if (errno != EIO && errno != ENOTTY && errno != EINVAL)
+            fprintf(stderr, "tcdrain: %s\n", strerror(errno));
+        if (serial_fd >= 0) {
+            close(serial_fd);
+            serial_fd = -1;
+        }
         return -1;
     }
 
@@ -217,6 +249,10 @@ static int read_exact_timeout(uint8_t *buf, size_t len, int timeout_ms)
             if (errno == EINTR || errno == EAGAIN)
                 continue;
             fprintf(stderr, "serial read: %s\n", strerror(errno));
+            if (serial_fd >= 0) {
+                close(serial_fd);
+                serial_fd = -1;
+            }
             return -1;
         }
         if (n == 0)
@@ -524,6 +560,18 @@ int main(int argc, char **argv)
     SpindleStatus status;
 
     while (!done) {
+        if (serial_fd < 0) {
+            serial_fd = configure_serial(port);
+            if (serial_fd < 0) {
+                set_comm_error(haldata, true);
+                if (haldata != NULL && haldata->running != NULL)
+                    *(haldata->running) = 0;
+                usleep(100000);
+                continue;
+            }
+            printf("Reconnected to %s @ 115200 baud\n", port);
+        }
+
         spindle_start = *(haldata->spindle_start);
         spindle_cw = *(haldata->spindle_cw);
         spindle_ccw = *(haldata->spindle_ccw);
