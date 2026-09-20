@@ -86,6 +86,13 @@ USERSRCS += $(SENDKEYS_SRC)
 	$(Q)$(CC) $(LDFLAGS) -o $@ $^
 TARGETS += ../bin/sendkeys
 
+BMR_SFU_SRC = hal/user_comps/bmr_sfu.c
+USERSRCS += $(BMR_SFU_SRC)
+../bin/bmr_sfu: $(call TOOBJS, $(BMR_SFU_SRC)) ../lib/liblinuxcnchal.so.0
+	$(ECHO) Linking $(notdir $@)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $^
+TARGETS += ../bin/bmr_sfu
+
 $(patsubst ./hal/user_comps/%,../include/%,$(wildcard ./hal/user_comps/*.h)): ../include/%.h: ./hal/user_comps/%.h
 	cp $^ $@
 $(patsubst ./hal/user_comps/%,../include/%,$(wildcard ./hal/user_comps/*.hh)): ../include/%.hh: ./hal/user_comps/%.hh
