@@ -64,6 +64,22 @@ typedef struct {
     hal_bit_t *spindle_cw;
     hal_bit_t *spindle_ccw;
     hal_float_t *spindle_rpm;
+
+    hal_bit_t *running;
+    hal_bit_t *target_speed_reached;
+    hal_bit_t *stopped;
+    hal_bit_t *undervoltage;
+    hal_bit_t *overvoltage;
+    hal_bit_t *rs232_error;
+    hal_bit_t *spindle_not_ready;
+    hal_bit_t *converter_not_ready;
+    hal_bit_t *overload;
+    hal_bit_t *converter_overtemp;
+    hal_bit_t *spindle_overtemp;
+    hal_u32_t *status_word;
+    hal_float_t *current;
+    hal_float_t *voltage;
+    hal_u32_t *rpm_feedback;
     char *modname;
     char *port;
 } haldata_t;
@@ -74,7 +90,7 @@ typedef struct {
     bool stopped;
     bool undervoltage;
     bool overvoltage;
-    bool rs232_status;
+    bool rs232_error;
     bool spindle_not_ready;
     bool converter_not_ready;
     bool overload;
@@ -287,7 +303,7 @@ static SpindleStatus get_status_bits(uint16_t status)
         .stopped = (status & (1u << 6)) != 0,
         .undervoltage = (status & (1u << 7)) != 0,
         .overvoltage = (status & (1u << 8)) != 0,
-        .rs232_status = (status & (1u << 10)) != 0,
+        .rs232_error = (status & (1u << 10)) != 0,
         /* Python source's comment/table say bit 11; it accidentally tested bit 10. */
         .spindle_not_ready = (status & (1u << 11)) != 0,
         .converter_not_ready = (status & (1u << 12)) != 0,
@@ -369,6 +385,98 @@ int main(int argc, char **argv)
     }
     *haldata->spindle_rpm = 5000.0;
 
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->running), comp_id, "%s.running", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create running pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->running = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->target_speed_reached), comp_id, "%s.target_speed_reached", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create target_speed_reached pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->target_speed_reached = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->stopped), comp_id, "%s.stopped", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create stopped pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->stopped = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->undervoltage), comp_id, "%s.undervoltage", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create undervoltage pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->undervoltage = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->overvoltage), comp_id, "%s.overvoltage", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create overvoltage pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->overvoltage = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->rs232_error), comp_id, "%s.rs232_error", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create rs232_error pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->rs232_error = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->spindle_not_ready), comp_id, "%s.spindle_not_ready", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create spindle_not_ready pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->spindle_not_ready = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->converter_not_ready), comp_id, "%s.converter_not_ready", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create converter_not_ready pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->converter_not_ready = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->overload), comp_id, "%s.overload", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create overload pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->overload = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->converter_overtemp), comp_id, "%s.converter_overtemp", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create converter_overtemp pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->converter_overtemp = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->spindle_overtemp), comp_id, "%s.spindle_overtemp", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create spindle_overtemp pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->spindle_overtemp = 0;
+    if (hal_pin_u32_newf(HAL_OUT, &(haldata->status_word), comp_id, "%s.status_word", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create status_word pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->status_word = 0;
+    if (hal_pin_float_newf(HAL_OUT, &(haldata->current), comp_id, "%s.current", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create current pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->current = 0.0;
+    if (hal_pin_float_newf(HAL_OUT, &(haldata->voltage), comp_id, "%s.voltage", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create voltage pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->voltage = 0.0;
+    if (hal_pin_u32_newf(HAL_OUT, &(haldata->rpm_feedback), comp_id, "%s.rpm_feedback", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create rpm_feedback pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->rpm_feedback = 0;
+
+
 
     hal_ready(comp_id);
 
@@ -427,6 +535,19 @@ int main(int argc, char **argv)
             if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0)
                 break;
             SpindleStatus status = get_status_bits(status_word);
+            *(haldata->running) = status.running;
+            *(haldata->target_speed_reached) = status.target_speed_reached;
+            *(haldata->stopped) = status.stopped;
+            *(haldata->undervoltage) = status.undervoltage;
+            *(haldata->overvoltage) = status.overvoltage;
+            *(haldata->rs232_error) = status.rs232_error;
+            *(haldata->spindle_not_ready) = status.spindle_not_ready;
+            *(haldata->converter_not_ready) = status.converter_not_ready;
+            *(haldata->overload) = status.overload;
+            *(haldata->converter_overtemp) = status.converter_overtemp;
+            *(haldata->spindle_overtemp) = status.spindle_overtemp;
+            *(haldata->status_word) = status_word;
+
             printf("Target speed reached: %s\n", status.target_speed_reached ? "true" : "false");
 
             if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_CURRENT, &current_raw) != 0)
@@ -438,10 +559,16 @@ int main(int argc, char **argv)
             if (read_word(COMMAND_GET_SPEED_OUTPUT, RESPONSE_GET_SPEED_OUTPUT, &speed_raw) != 0)
                 break;
 
+
+                
             double current = current_raw / 100.0;
             double voltage = voltage_raw / 10.0;
             unsigned rpm_feedback = (unsigned)speed_raw * 10u;
-
+            
+            *(haldata->current) = current;
+            *(haldata->voltage) = voltage;
+            *(haldata->rpm_feedback) = rpm_feedback;
+                
             printf("Speed: %u\n", rpm_feedback);
             printf("Current: %.2f\n", current);
             printf("Voltage: %.1f\n", voltage);
