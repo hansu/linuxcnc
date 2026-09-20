@@ -75,6 +75,7 @@ typedef struct {
     hal_bit_t *overload;
     hal_bit_t *converter_overtemp;
     hal_bit_t *spindle_overtemp;
+    hal_bit_t *comm_error;
     hal_u32_t *status_word;
     hal_float_t *current;
     hal_float_t *voltage;
@@ -294,7 +295,6 @@ static SpindleStatus get_status_bits(uint16_t status)
         .undervoltage = (status & (1u << 7)) != 0,
         .overvoltage = (status & (1u << 8)) != 0,
         .rs232_error = (status & (1u << 10)) != 0,
-        /* Python source's comment/table say bit 11; it accidentally tested bit 10. */
         .spindle_not_ready = (status & (1u << 11)) != 0,
         .converter_not_ready = (status & (1u << 12)) != 0,
         .overload = (status & (1u << 13)) != 0,
@@ -332,6 +332,12 @@ static int stop_spindle(void)
 
     printf("Stop: 0x%X\n", value);
     return 0;
+}
+
+static void set_comm_error(haldata_t *haldata, bool state)
+{
+    if (haldata != NULL && haldata->comm_error != NULL)
+        *(haldata->comm_error) = state;
 }
 
 int main(int argc, char **argv)
@@ -485,6 +491,12 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     *haldata->rpm_feedback = 0;
+    if (hal_pin_bit_newf(HAL_OUT, &(haldata->comm_error), comp_id, "%s.comm_error", modname) != 0) {
+        fprintf(stderr, "bmr_sfu_control: could not create comm_error pin\n");
+        hal_exit(comp_id);
+        return EXIT_FAILURE;
+    }
+    *haldata->comm_error = 0;
 
     hal_ready(comp_id);
 
@@ -518,8 +530,12 @@ int main(int argc, char **argv)
         spindle_rpm = *(haldata->spindle_rpm);
 
         // Read status data
-        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0)
-            break;
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0) {
+            set_comm_error(haldata, true);
+            *(haldata->running) = 0;
+            usleep(10000);
+            continue;
+        }
         status = get_status_bits(status_word);
         *(haldata->running) = status.running;
         *(haldata->target_speed_reached) = status.target_speed_reached;
@@ -534,26 +550,34 @@ int main(int argc, char **argv)
         *(haldata->spindle_overtemp) = status.spindle_overtemp;
         *(haldata->status_word) = status_word;
 
-        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_CURRENT, &current_raw) != 0)
-            break;
-        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_VOLTAGE, &voltage_raw) != 0)
-            break;
-        if (read_word(COMMAND_GET_SPEED_OUTPUT, RESPONSE_GET_SPEED_OUTPUT, &speed_raw) != 0)
-            break;
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_CURRENT, &current_raw) != 0) {
+            set_comm_error(haldata, true);
+            continue;
+        }
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_VOLTAGE, &voltage_raw) != 0) {
+            set_comm_error(haldata, true);
+            continue;
+        }
+        if (read_word(COMMAND_GET_SPEED_OUTPUT, RESPONSE_GET_SPEED_OUTPUT, &speed_raw) != 0) {
+            set_comm_error(haldata, true);
+            continue;
+        }
         *(haldata->current) = current_raw / 100.0;
         *(haldata->voltage) = voltage_raw / 10.0;
         *(haldata->rpm_feedback) = (unsigned)speed_raw * 10u;
 
         // Start pin changed
         if (spindle_start != spindle_start_last) {
+            set_comm_error(haldata, false);
             spindle_start_last = spindle_start;
             if (spindle_start) {
                 request_start = true;
-          
+
             } else {
                 if (stop_spindle() != 0) {
                     fprintf(stderr, "bmr_sfu: stop failed\n");
-                    goto cleanup;
+                    set_comm_error(haldata, true);
+                    continue;
                 }
             }
         }
@@ -563,8 +587,10 @@ int main(int argc, char **argv)
             if (status.stopped) {
                 if (start_spindle(spindle_rpm, spindle_cw) != 0) {
                     fprintf(stderr, "bmr_sfu: start failed\n");
-                    goto cleanup;
-                }                
+                    set_comm_error(haldata, true);
+                    request_start = false;
+                    continue;
+                }
                 request_start = false;
             }
         }
@@ -572,27 +598,32 @@ int main(int argc, char **argv)
         // Speed changed
         if (spindle_rpm != spindle_rpm_last) {
             spindle_rpm_last = spindle_rpm;
-            if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0)
-                goto cleanup;
+            if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0) {
+                fprintf(stderr, "bmr_sfu: set speed failed\n");
+                set_comm_error(haldata, true);
+                continue;
+            }
             printf("Set Speed: %u\n", (unsigned)response_value * 10u);
         }
-        
+
         // Direction pin changed
         if (spindle_cw != spindle_cw_last) {
             spindle_cw_last = spindle_cw;
-            if(spindle_start) {
-                stop_spindle();
+            if (spindle_start) {
+                if (stop_spindle() != 0) {
+                    set_comm_error(haldata, true);
+                    continue;
+                }
                 request_start = true;
             }
         }
 
-
-        usleep(10000);        
+        
+        usleep(10000);
     }
 
     exit_code = EXIT_SUCCESS;
 
-cleanup:
     stop_spindle();
 
     if (done) {
