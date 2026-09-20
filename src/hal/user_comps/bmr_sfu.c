@@ -22,8 +22,7 @@
 #include <hal.h>
 
 /*
- * Linux C port of bmr_sfu151.py
- * BMR SFU 0151 VFD serial control, 115200 baud, 8N1.
+ * LinuxCNC driver for BMR SFU 0151 VFD serial control, 115200 baud, 8N1.
  */
 
 #define PORT_DEFAULT        "/dev/ttyUSB0"
@@ -60,7 +59,7 @@ static volatile sig_atomic_t stop_requested = 0;
 static int done = 0;
 
 typedef struct {
-    hal_bit_t *start;
+    hal_bit_t *spindle_start;
     hal_bit_t *spindle_cw;
     hal_bit_t *spindle_ccw;
     hal_float_t *spindle_rpm;
@@ -104,15 +103,6 @@ static void handle_sigint(int sig)
     stop_requested = 1;
     done = 1;
     printf("stop requested");
-}
-
-static void get_timestamp(char *buf, size_t size)
-{
-    time_t now = time(NULL);
-    struct tm tm_now;
-
-    localtime_r(&now, &tm_now);
-    strftime(buf, size, "%H:%M:%S", &tm_now);
 }
 
 static int64_t monotonic_ms(void)
@@ -313,6 +303,26 @@ static SpindleStatus get_status_bits(uint16_t status)
     };
     return s;
 }
+static int start_spindle(double spindle_rpm, bool spindle_cw)
+{
+    uint16_t response_value;
+    if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0)
+        return -1;
+    printf("Set Speed: %u\n", (unsigned)response_value * 10u);
+
+    if (spindle_cw) {
+        if (write_word(COMMAND_SET_DIR_CW, RESPONSE_SET_DIR_CW, 0, &response_value) != 0)
+            return -1;
+    } else {
+        if (write_word(COMMAND_SET_DIR_CCW, RESPONSE_SET_DIR_CCW, 0, &response_value) != 0)
+            return -1;
+    }
+
+    if (read_word(COMMAND_START, RESPONSE_START, &response_value) != 0)
+        return -1;
+    printf("Start: 0x%X\n", response_value);
+    return 0;
+}
 
 static int stop_spindle(void)
 {
@@ -360,12 +370,12 @@ int main(int argc, char **argv)
     haldata->modname = (char *)modname;
     haldata->port = (char *)port;
 
-    if (hal_pin_bit_newf(HAL_IN, &(haldata->start), comp_id, "%s.start", modname) != 0) {
+    if (hal_pin_bit_newf(HAL_IN, &(haldata->spindle_start), comp_id, "%s.start", modname) != 0) {
         fprintf(stderr, "bmr_sfu151: could not create start pin\n");
         hal_exit(comp_id);
         return EXIT_FAILURE;
     }
-    *haldata->start = 0;
+    *haldata->spindle_start = 0;
     if (hal_pin_bit_newf(HAL_IN, &(haldata->spindle_cw), comp_id, "%s.spindle_cw", modname) != 0) {
         fprintf(stderr, "bmr_sfu151: could not create spindle_cw pin\n");
         hal_exit(comp_id);
@@ -476,8 +486,6 @@ int main(int argc, char **argv)
     }
     *haldata->rpm_feedback = 0;
 
-
-
     hal_ready(comp_id);
 
     serial_fd = configure_serial(port);
@@ -486,102 +494,100 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    char now[16];
-    get_timestamp(now, sizeof(now));
-    printf("[%s] Connected to %s @ 115200 baud\n", now, port);
+    printf("Connected to %s @ 115200 baud\n", port);
 
+    bool spindle_start;
     bool spindle_cw;
     bool spindle_ccw;
     double spindle_rpm;
-    
+    bool spindle_start_last = false;
+    bool spindle_cw_last = true;
+    double spindle_rpm_last = 5000;
+    uint16_t response_value;
+    bool request_start = false;
+    uint16_t status_word;
+    uint16_t current_raw;
+    uint16_t voltage_raw;
+    uint16_t speed_raw;
+    SpindleStatus status;
+
     while (!done) {
-        
-        if (!*(haldata->start)) {
-            usleep(1000);
-            continue;
+        spindle_start = *(haldata->spindle_start);
+        spindle_cw = *(haldata->spindle_cw);
+        spindle_ccw = *(haldata->spindle_ccw);
+        spindle_rpm = *(haldata->spindle_rpm);
+
+        // Read status data
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0)
+            break;
+        status = get_status_bits(status_word);
+        *(haldata->running) = status.running;
+        *(haldata->target_speed_reached) = status.target_speed_reached;
+        *(haldata->stopped) = status.stopped;
+        *(haldata->undervoltage) = status.undervoltage;
+        *(haldata->overvoltage) = status.overvoltage;
+        *(haldata->rs232_error) = status.rs232_error;
+        *(haldata->spindle_not_ready) = status.spindle_not_ready;
+        *(haldata->converter_not_ready) = status.converter_not_ready;
+        *(haldata->overload) = status.overload;
+        *(haldata->converter_overtemp) = status.converter_overtemp;
+        *(haldata->spindle_overtemp) = status.spindle_overtemp;
+        *(haldata->status_word) = status_word;
+
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_CURRENT, &current_raw) != 0)
+            break;
+        if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_VOLTAGE, &voltage_raw) != 0)
+            break;
+        if (read_word(COMMAND_GET_SPEED_OUTPUT, RESPONSE_GET_SPEED_OUTPUT, &speed_raw) != 0)
+            break;
+        *(haldata->current) = current_raw / 100.0;
+        *(haldata->voltage) = voltage_raw / 10.0;
+        *(haldata->rpm_feedback) = (unsigned)speed_raw * 10u;
+
+        // Start pin changed
+        if (spindle_start != spindle_start_last) {
+            spindle_start_last = spindle_start;
+            if (spindle_start) {
+                request_start = true;
+          
+            } else {
+                if (stop_spindle() != 0) {
+                    fprintf(stderr, "bmr_sfu: stop failed\n");
+                    goto cleanup;
+                }
+            }
         }
-        
-        // Start spindle
-        if (*(haldata->start)) {
-            uint16_t response_value;
-            spindle_cw = *(haldata->spindle_cw);
-            spindle_ccw = *(haldata->spindle_ccw);
-            spindle_rpm = *(haldata->spindle_rpm);
-            
+
+        // The start command is only accepted when the spindle is stopped. So wait here for stop.
+        if (request_start) {
+            if (status.stopped) {
+                if (start_spindle(spindle_rpm, spindle_cw) != 0) {
+                    fprintf(stderr, "bmr_sfu: start failed\n");
+                    goto cleanup;
+                }                
+                request_start = false;
+            }
+        }
+
+        // Speed changed
+        if (spindle_rpm != spindle_rpm_last) {
+            spindle_rpm_last = spindle_rpm;
             if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0)
                 goto cleanup;
             printf("Set Speed: %u\n", (unsigned)response_value * 10u);
-
-            if (spindle_cw) {
-                if (write_word(COMMAND_SET_DIR_CW, RESPONSE_SET_DIR_CW, 0, &response_value) != 0)
-                    goto cleanup;
-            } else if (spindle_ccw) {
-                if (write_word(COMMAND_SET_DIR_CCW, RESPONSE_SET_DIR_CCW, 0, &response_value) != 0)
-                    goto cleanup;
-            }
-
-            if (read_word(COMMAND_START, RESPONSE_START, &response_value) != 0)
-                goto cleanup;
-            printf("Start: 0x%X\n", response_value);
         }
-
-        // Keep alive loop
-        while (*(haldata->start)){
-            uint16_t status_word;
-            uint16_t current_raw;
-            uint16_t voltage_raw;
-            uint16_t speed_raw;
-
-            if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0)
-                break;
-            SpindleStatus status = get_status_bits(status_word);
-            *(haldata->running) = status.running;
-            *(haldata->target_speed_reached) = status.target_speed_reached;
-            *(haldata->stopped) = status.stopped;
-            *(haldata->undervoltage) = status.undervoltage;
-            *(haldata->overvoltage) = status.overvoltage;
-            *(haldata->rs232_error) = status.rs232_error;
-            *(haldata->spindle_not_ready) = status.spindle_not_ready;
-            *(haldata->converter_not_ready) = status.converter_not_ready;
-            *(haldata->overload) = status.overload;
-            *(haldata->converter_overtemp) = status.converter_overtemp;
-            *(haldata->spindle_overtemp) = status.spindle_overtemp;
-            *(haldata->status_word) = status_word;
-
-            printf("Target speed reached: %s\n", status.target_speed_reached ? "true" : "false");
-
-            if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_CURRENT, &current_raw) != 0)
-                break;
-
-            if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_VOLTAGE, &voltage_raw) != 0)
-                break;
-
-            if (read_word(COMMAND_GET_SPEED_OUTPUT, RESPONSE_GET_SPEED_OUTPUT, &speed_raw) != 0)
-                break;
-
-
-                
-            double current = current_raw / 100.0;
-            double voltage = voltage_raw / 10.0;
-            unsigned rpm_feedback = (unsigned)speed_raw * 10u;
-            
-            *(haldata->current) = current;
-            *(haldata->voltage) = voltage;
-            *(haldata->rpm_feedback) = rpm_feedback;
-                
-            printf("Speed: %u\n", rpm_feedback);
-            printf("Current: %.2f\n", current);
-            printf("Voltage: %.1f\n", voltage);
-            printf("---------------\n");
-            fflush(stdout);
-
-            struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
-            while (!done && nanosleep(&req, &req) != 0) {
-                if (errno != EINTR)
-                    break;
+        
+        // Direction pin changed
+        if (spindle_cw != spindle_cw_last) {
+            spindle_cw_last = spindle_cw;
+            if(spindle_start) {
+                stop_spindle();
+                request_start = true;
             }
         }
-        stop_spindle();
+
+
+        usleep(10000);        
     }
 
     exit_code = EXIT_SUCCESS;
@@ -590,8 +596,7 @@ cleanup:
     stop_spindle();
 
     if (done) {
-        get_timestamp(now, sizeof(now));
-        printf("\n[%s] Stopped\n", now);
+        printf("\nStopped\n");
     }
 
     if (serial_fd >= 0) {
