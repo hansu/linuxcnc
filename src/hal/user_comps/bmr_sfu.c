@@ -86,6 +86,7 @@ typedef struct {
 
 typedef struct {
     bool running;
+    bool extern_disable;
     bool target_speed_reached;
     bool stopped;
     bool undervoltage;
@@ -335,17 +336,22 @@ static int write_word(uint8_t command, uint8_t response,
 static SpindleStatus get_status_bits(uint16_t status)
 {
     SpindleStatus s = {
-        .running = (status & (1u << 1)) != 0,
-        .target_speed_reached = (status & (1u << 5)) != 0,
-        .stopped = (status & (1u << 6)) != 0,
-        .undervoltage = (status & (1u << 7)) != 0,
-        .overvoltage = (status & (1u << 8)) != 0,
-        .rs232_error = (status & (1u << 10)) != 0,
-        .spindle_not_ready = (status & (1u << 11)) != 0,
-        .converter_not_ready = (status & (1u << 12)) != 0,
-        .overload = (status & (1u << 13)) != 0,
-        .converter_overtemp = (status & (1u << 14)) != 0,
-        .spindle_overtemp = (status & (1u << 15)) != 0
+      /*.reserved =              (status & (1u << 0)) != 0,*/
+        .running =               (status & (1u << 1)) != 0,
+        .extern_disable =        (status & (1u << 2)) != 0,
+      /*.remote_control_active = (status & (1u << 3)) != 0,
+        .curr_speed_reached =    (status & (1u << 4)) != 0,*/
+        .target_speed_reached =  (status & (1u << 5)) != 0,
+        .stopped =               (status & (1u << 6)) != 0,
+        .undervoltage =          (status & (1u << 7)) != 0,
+        .overvoltage =           (status & (1u << 8)) != 0,
+      /*.varioload_reached =     (status & (1u << 9)) != 0,*/
+        .rs232_error =           (status & (1u << 10)) != 0,
+        .spindle_not_ready =     (status & (1u << 11)) != 0,
+        .converter_not_ready =   (status & (1u << 12)) != 0,
+        .overload =              (status & (1u << 13)) != 0,
+        .converter_overtemp =    (status & (1u << 14)) != 0,
+        .spindle_overtemp =      (status & (1u << 15)) != 0
     };
     return s;
 }
@@ -423,25 +429,25 @@ int main(int argc, char **argv)
     haldata->port = (char *)port;
 
     HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_start, comp_id, modname, start, 0);
-    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_cw, comp_id, modname, spindle_cw, 1);
-    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_ccw, comp_id, modname, spindle_ccw, 0);
-    HAL_PIN_NEW(float, HAL_IN, haldata->spindle_rpm, comp_id, modname, spindle_rpm, 5000.0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->running, comp_id, modname, running, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->target_speed_reached, comp_id, modname, target_speed_reached, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->stopped, comp_id, modname, stopped, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->undervoltage, comp_id, modname, undervoltage, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->overvoltage, comp_id, modname, overvoltage, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->rs232_error, comp_id, modname, rs232_error, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_not_ready, comp_id, modname, spindle_not_ready, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_not_ready, comp_id, modname, converter_not_ready, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->overload, comp_id, modname, overload, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_overtemp, comp_id, modname, converter_overtemp, 0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_overtemp, comp_id, modname, spindle_overtemp, 0);
+    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_cw, comp_id, modname, spindle-cw, 1);
+    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_ccw, comp_id, modname, spindle-ccw, 0);
+    HAL_PIN_NEW(float, HAL_IN, haldata->spindle_rpm, comp_id, modname, spindle-rpm, 5000.0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->running, comp_id, modname, status.running, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->target_speed_reached, comp_id, modname, status.target-speed-reached, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->stopped, comp_id, modname, status.stopped, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->undervoltage, comp_id, modname, status.undervoltage, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->overvoltage, comp_id, modname, status.overvoltage, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->rs232_error, comp_id, modname, status.rs232-error, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_not_ready, comp_id, modname, status.spindle-not-ready, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_not_ready, comp_id, modname, status.converter-not-ready, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->overload, comp_id, modname, status.overload, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_overtemp, comp_id, modname, status.converter-overtemp, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_overtemp, comp_id, modname, status.spindle-overtemp, 0);
     HAL_PIN_NEW(u32, HAL_OUT, haldata->status_word, comp_id, modname, status_word, 0);
     HAL_PIN_NEW(float, HAL_OUT, haldata->current, comp_id, modname, current, 0.0);
     HAL_PIN_NEW(float, HAL_OUT, haldata->voltage, comp_id, modname, voltage, 0.0);
-    HAL_PIN_NEW(float, HAL_OUT, haldata->rpm_feedback, comp_id, modname, rpm_feedback, 0.0);
-    HAL_PIN_NEW(bit, HAL_OUT, haldata->comm_error, comp_id, modname, comm_error, 0);
+    HAL_PIN_NEW(float, HAL_OUT, haldata->rpm_feedback, comp_id, modname, rpm-feedback, 0.0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->comm_error, comp_id, modname, status.comm-error, 0);
 
     hal_ready(comp_id);
 
