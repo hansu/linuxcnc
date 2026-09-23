@@ -392,6 +392,8 @@ static void set_comm_error(haldata_t *haldata, bool state)
 {
     if (haldata != NULL && haldata->comm_error != NULL)
         *(haldata->comm_error) = state;
+    if (state)
+        fprintf(stderr, "bmr_sfu151: rs232 communication error\n");
 }
 
 int main(int argc, char **argv)
@@ -503,6 +505,7 @@ int main(int argc, char **argv)
             usleep(10000);
             continue;
         }
+        set_comm_error(haldata, false);
         status = get_status_bits(status_word);
         *(haldata->running) = status.running;
         *(haldata->target_speed_reached) = status.target_speed_reached;
@@ -535,7 +538,6 @@ int main(int argc, char **argv)
 
         // Start pin changed
         if (spindle_start != spindle_start_last) {
-            set_comm_error(haldata, false);
             spindle_start_last = spindle_start;
             if (spindle_start) {
                 request_start = true;
