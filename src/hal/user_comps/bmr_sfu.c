@@ -23,6 +23,8 @@
 
 /*
  * LinuxCNC driver for BMR SFU 0151 VFD serial control, 115200 baud, 8N1.
+ * sudo halcompile --install --userspace bmr_sfu.c 
+ * loadusr -W bmr_sfu /dev/ttyXXX 
  */
 
 #define PORT_DEFAULT        "/dev/ttyUSB0"
@@ -458,7 +460,7 @@ int main(int argc, char **argv)
     }
 
     printf("Connected to %s @ 115200 baud\n", port);
-
+    
     bool spindle_dir_cw = true;
     bool spindle_start;
     bool spindle_cw;
@@ -546,7 +548,7 @@ int main(int argc, char **argv)
                 }
             }
         }
-
+        
         // Direction changed
         if (spindle_cw != spindle_cw_last || spindle_ccw != spindle_ccw_last) {
             spindle_cw_last = spindle_cw;
@@ -565,12 +567,12 @@ int main(int argc, char **argv)
             spindle_rpm_last = spindle_rpm;
             if (!request_start){ // Prevent sending the speed command twice
                 if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(fabs(spindle_rpm) / 10.0), &response_value) != 0) {
-                fprintf(stderr, "bmr_sfu: set speed failed\n");
-                set_comm_error(haldata, true);
-                continue;
+                    fprintf(stderr, "bmr_sfu: set speed failed\n");
+                    set_comm_error(haldata, true);
+                    continue;
+                }
+                printf("Set Speed: %u\n", (unsigned)response_value * 10u);
             }
-            printf("Set Speed: %u\n", (unsigned)response_value * 10u);
-        }
         }
 
         // The start command is only accepted when the spindle is stopped. So wait here for stop.
