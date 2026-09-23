@@ -453,6 +453,7 @@ int main(int argc, char **argv)
 
     printf("Connected to %s @ 115200 baud\n", port);
 
+    bool spindle_dir_cw = true;
     bool spindle_start;
     bool spindle_cw;
     bool spindle_ccw;
@@ -522,7 +523,7 @@ int main(int argc, char **argv)
         }
         *(haldata->current) = current_raw / 100.0;
         *(haldata->voltage) = voltage_raw / 10.0;
-        *(haldata->rpm_feedback) = (unsigned)speed_raw * 10u;
+        *(haldata->rpm_feedback) = speed_raw * (spindle_dir_cw?10:-10);
 
         // Start pin changed
         if (spindle_start != spindle_start_last) {
@@ -569,12 +570,11 @@ int main(int argc, char **argv)
         // The start command is only accepted when the spindle is stopped. So wait here for stop.
         if (request_start) {
             if (status.stopped) {
-                bool dir_cw;
-                if (spindle_cw && !spindle_ccw) dir_cw = true;
-                else if (!spindle_cw && spindle_ccw) dir_cw = false;
+                if (spindle_cw && !spindle_ccw) spindle_dir_cw = true;
+                else if (!spindle_cw && spindle_ccw) spindle_dir_cw = false;
                 else continue;
 
-                if (start_spindle(fabs(spindle_rpm), dir_cw) != 0) {
+                if (start_spindle(fabs(spindle_rpm), spindle_dir_cw) != 0) {
                     fprintf(stderr, "bmr_sfu: start failed\n");
                     set_comm_error(haldata, true);
                     request_start = false;
