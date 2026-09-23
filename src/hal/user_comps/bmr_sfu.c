@@ -79,7 +79,7 @@ typedef struct {
     hal_u32_t *status_word;
     hal_float_t *current;
     hal_float_t *voltage;
-    hal_u32_t *rpm_feedback;
+    hal_float_t *rpm_feedback;
     char *modname;
     char *port;
 } haldata_t;
@@ -97,6 +97,16 @@ typedef struct {
     bool converter_overtemp;
     bool spindle_overtemp;
 } SpindleStatus;
+
+#define HAL_PIN_NEW(type, dir, var, comp_id, modname, name, initval) \
+    do { \
+        if (hal_pin_##type##_newf((dir), &(var), (comp_id), "%s." #name, (modname)) != 0) { \
+            fprintf(stderr, "bmr_sfu: could not create " #name " pin\n"); \
+            hal_exit((comp_id)); \
+            return EXIT_FAILURE; \
+        } \
+        *(var) = (initval); \
+    } while (0)
 
 static void handle_sigint(int sig)
 {
@@ -412,127 +422,26 @@ int main(int argc, char **argv)
     haldata->modname = (char *)modname;
     haldata->port = (char *)port;
 
-    if (hal_pin_bit_newf(HAL_IN, &(haldata->spindle_start), comp_id, "%s.start", modname) != 0) {
-        fprintf(stderr, "bmr_sfu151: could not create start pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_start = 0;
-    if (hal_pin_bit_newf(HAL_IN, &(haldata->spindle_cw), comp_id, "%s.spindle_cw", modname) != 0) {
-        fprintf(stderr, "bmr_sfu151: could not create spindle_cw pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_cw = 1;
-    if (hal_pin_bit_newf(HAL_IN, &(haldata->spindle_ccw), comp_id, "%s.spindle_ccw", modname) != 0) {
-        fprintf(stderr, "bmr_sfu151: could not create spindle_ccw pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_ccw = 0;
-    if (hal_pin_float_newf(HAL_IN, &(haldata->spindle_rpm), comp_id, "%s.spindle_rpm", modname) != 0) {
-        fprintf(stderr, "bmr_sfu151: could not create spindle_rpm pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_rpm = 5000.0;
-
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->running), comp_id, "%s.running", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create running pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->running = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->target_speed_reached), comp_id, "%s.target_speed_reached", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create target_speed_reached pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->target_speed_reached = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->stopped), comp_id, "%s.stopped", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create stopped pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->stopped = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->undervoltage), comp_id, "%s.undervoltage", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create undervoltage pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->undervoltage = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->overvoltage), comp_id, "%s.overvoltage", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create overvoltage pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->overvoltage = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->rs232_error), comp_id, "%s.rs232_error", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create rs232_error pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->rs232_error = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->spindle_not_ready), comp_id, "%s.spindle_not_ready", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create spindle_not_ready pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_not_ready = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->converter_not_ready), comp_id, "%s.converter_not_ready", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create converter_not_ready pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->converter_not_ready = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->overload), comp_id, "%s.overload", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create overload pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->overload = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->converter_overtemp), comp_id, "%s.converter_overtemp", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create converter_overtemp pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->converter_overtemp = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->spindle_overtemp), comp_id, "%s.spindle_overtemp", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create spindle_overtemp pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->spindle_overtemp = 0;
-    if (hal_pin_u32_newf(HAL_OUT, &(haldata->status_word), comp_id, "%s.status_word", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create status_word pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->status_word = 0;
-    if (hal_pin_float_newf(HAL_OUT, &(haldata->current), comp_id, "%s.current", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create current pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->current = 0.0;
-    if (hal_pin_float_newf(HAL_OUT, &(haldata->voltage), comp_id, "%s.voltage", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create voltage pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->voltage = 0.0;
-    if (hal_pin_u32_newf(HAL_OUT, &(haldata->rpm_feedback), comp_id, "%s.rpm_feedback", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create rpm_feedback pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->rpm_feedback = 0;
-    if (hal_pin_bit_newf(HAL_OUT, &(haldata->comm_error), comp_id, "%s.comm_error", modname) != 0) {
-        fprintf(stderr, "bmr_sfu_control: could not create comm_error pin\n");
-        hal_exit(comp_id);
-        return EXIT_FAILURE;
-    }
-    *haldata->comm_error = 0;
+    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_start, comp_id, modname, start, 0);
+    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_cw, comp_id, modname, spindle_cw, 1);
+    HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_ccw, comp_id, modname, spindle_ccw, 0);
+    HAL_PIN_NEW(float, HAL_IN, haldata->spindle_rpm, comp_id, modname, spindle_rpm, 5000.0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->running, comp_id, modname, running, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->target_speed_reached, comp_id, modname, target_speed_reached, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->stopped, comp_id, modname, stopped, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->undervoltage, comp_id, modname, undervoltage, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->overvoltage, comp_id, modname, overvoltage, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->rs232_error, comp_id, modname, rs232_error, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_not_ready, comp_id, modname, spindle_not_ready, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_not_ready, comp_id, modname, converter_not_ready, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->overload, comp_id, modname, overload, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->converter_overtemp, comp_id, modname, converter_overtemp, 0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->spindle_overtemp, comp_id, modname, spindle_overtemp, 0);
+    HAL_PIN_NEW(u32, HAL_OUT, haldata->status_word, comp_id, modname, status_word, 0);
+    HAL_PIN_NEW(float, HAL_OUT, haldata->current, comp_id, modname, current, 0.0);
+    HAL_PIN_NEW(float, HAL_OUT, haldata->voltage, comp_id, modname, voltage, 0.0);
+    HAL_PIN_NEW(float, HAL_OUT, haldata->rpm_feedback, comp_id, modname, rpm_feedback, 0.0);
+    HAL_PIN_NEW(bit, HAL_OUT, haldata->comm_error, comp_id, modname, comm_error, 0);
 
     hal_ready(comp_id);
 
