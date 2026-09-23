@@ -349,14 +349,14 @@ static SpindleStatus get_status_bits(uint16_t status)
     };
     return s;
 }
-static int start_spindle(double spindle_rpm, bool spindle_cw)
+static int start_spindle(double spindle_rpm, bool dir_cw)
 {
     uint16_t response_value;
     if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0)
         return -1;
     printf("Set Speed: %u\n", (unsigned)response_value * 10u);
 
-    if (spindle_cw) {
+    if (dir_cw) {
         if (write_word(COMMAND_SET_DIR_CW, RESPONSE_SET_DIR_CW, 0, &response_value) != 0)
             return -1;
     } else {
@@ -459,6 +459,7 @@ int main(int argc, char **argv)
     double spindle_rpm;
     bool spindle_start_last = false;
     bool spindle_cw_last = true;
+    bool spindle_ccw_last = false;
     double spindle_rpm_last = 5000;
     uint16_t response_value;
     bool request_start = false;
@@ -539,39 +540,47 @@ int main(int argc, char **argv)
             }
         }
 
-        // The start command is only accepted when the spindle is stopped. So wait here for stop.
-        if (request_start) {
-            if (status.stopped) {
-                if (start_spindle(spindle_rpm, spindle_cw) != 0) {
-                    fprintf(stderr, "bmr_sfu: start failed\n");
-                    set_comm_error(haldata, true);
-                    request_start = false;
-                    continue;
-                }
-                request_start = false;
-            }
-        }
-
-        // Speed changed
-        if (spindle_rpm != spindle_rpm_last) {
-            spindle_rpm_last = spindle_rpm;
-            if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0) {
-                fprintf(stderr, "bmr_sfu: set speed failed\n");
-                set_comm_error(haldata, true);
-                continue;
-            }
-            printf("Set Speed: %u\n", (unsigned)response_value * 10u);
-        }
-
-        // Direction pin changed
-        if (spindle_cw != spindle_cw_last) {
+        // Direction changed
+        if (spindle_cw != spindle_cw_last || spindle_ccw != spindle_ccw_last) {
             spindle_cw_last = spindle_cw;
+            spindle_ccw_last = spindle_ccw;
             if (spindle_start) {
                 if (stop_spindle() != 0) {
                     set_comm_error(haldata, true);
                     continue;
                 }
                 request_start = true;
+            }
+        }
+
+        // Speed changed
+        if (spindle_rpm != spindle_rpm_last) {
+            spindle_rpm_last = spindle_rpm;
+            if (!request_start){ // Prevent sending the speed command twice
+                if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(fabs(spindle_rpm) / 10.0), &response_value) != 0) {
+                fprintf(stderr, "bmr_sfu: set speed failed\n");
+                set_comm_error(haldata, true);
+                continue;
+            }
+            printf("Set Speed: %u\n", (unsigned)response_value * 10u);
+        }
+        }
+
+        // The start command is only accepted when the spindle is stopped. So wait here for stop.
+        if (request_start) {
+            if (status.stopped) {
+                bool dir_cw;
+                if (spindle_cw && !spindle_ccw) dir_cw = true;
+                else if (!spindle_cw && spindle_ccw) dir_cw = false;
+                else continue;
+
+                if (start_spindle(fabs(spindle_rpm), dir_cw) != 0) {
+                    fprintf(stderr, "bmr_sfu: start failed\n");
+                    set_comm_error(haldata, true);
+                    request_start = false;
+                    continue;
+                }
+                request_start = false;
             }
         }
 
