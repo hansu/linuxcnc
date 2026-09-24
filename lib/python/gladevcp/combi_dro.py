@@ -196,6 +196,8 @@ class Combi_DRO(Gtk.Box):
         grid.set_hexpand_set(True)
         hbox_main.pack_start(grid_left, True, True, 0)
         hbox_main.pack_start(grid, True, True, 0)
+        grid.set_halign(Gtk.Align.END)
+
 
         # -------------------------------------------------
         # Axis Letter (X,Y,Z...)
@@ -203,7 +205,11 @@ class Combi_DRO(Gtk.Box):
         lbl_axisletter = Gtk.Label(label=_AXISLETTERS[self.axis_no])
         lbl_axisletter.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_axisletter.get_style_context().add_class('size_big')
-        grid_left.attach(lbl_axisletter, 1, 0, 1, 2)
+        lbl_axisletter.set_valign(Gtk.Align.END)
+        lbl_axisletter.set_halign(Gtk.Align.START)
+        lbl_axisletter.set_margin_end(10)
+
+        grid_left.attach(lbl_axisletter, 0, 1, 1, 1)
         self.widgets["lbl_axisletter"] = lbl_axisletter
 
         # -------------------------------------------------
@@ -211,20 +217,16 @@ class Combi_DRO(Gtk.Box):
         # -------------------------------------------------
         lbl_sys_main = Gtk.Label(label=self.system)
         lbl_sys_main.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        lbl_sys_main.set_valign(Gtk.Align.END)
         lbl_sys_main.get_style_context().add_class('size_small')
-        grid_left.attach(lbl_sys_main, 0, 0, 1, 2)
+        lbl_sys_main.set_valign(Gtk.Align.START)
+        lbl_sys_main.set_halign(Gtk.Align.END)
+        lbl_sys_main.set_margin_end(3)
+        lbl_sys_main.set_margin_top(3)
+        lbl_sys_main.set_vexpand(True)
+
+        grid_left.attach(lbl_sys_main, 1, 0, 1, 1)
         self.widgets["lbl_sys_main"] = lbl_sys_main
         
-        lbl_sys_main.set_halign(Gtk.Align.START)
-        lbl_sys_main.set_halign(Gtk.Align.START)
-        lbl_sys_main.set_margin_end(10)
-        lbl_sys_main.set_margin_top(3)
-        lbl_axisletter.set_halign(Gtk.Align.START)
-        lbl_sys_main.set_valign(Gtk.Align.START)
-
-        lbl_axisletter.set_valign(Gtk.Align.START)
-
         main_dro = Gtk.Label(label = "9999.000")
         main_dro.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         main_dro.get_style_context().add_class('size_big')
@@ -232,9 +234,8 @@ class Combi_DRO(Gtk.Box):
         # main_dro.set_margin_end(10)
         main_dro.set_hexpand(True)
         main_dro.set_halign(Gtk.Align.END)
-        #main_dro.set_valign(Gtk.Align.CENTER)
         
-        grid_left.attach(main_dro, 2, 0, 1, 2)
+        grid_left.attach(main_dro, 1, 1, 1, 1)
         self.widgets["main_dro"] = main_dro
         
         # -------------------------------------------------
@@ -243,14 +244,14 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_left = Gtk.Label(label="Abs")
         lbl_sys_left.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_left.get_style_context().add_class('size_small')
-        grid.attach(lbl_sys_left, 3, 1, 1, 1)
+        # grid.attach(lbl_sys_left, 3, 1, 1, 1)
         self.widgets["lbl_sys_left"] = lbl_sys_left
         
         dro_left = Gtk.Label(label = "-11.000")
         dro_left.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_left.get_style_context().add_class('size_small')
         dro_left.set_halign(Gtk.Align.END)
-        grid.attach(dro_left, 4, 1, 1, 1)
+        # grid.attach(dro_left, 4, 1, 1, 1)
         self.widgets["dro_left"] = dro_left
 
         # -------------------------------------------------
@@ -259,16 +260,24 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_right = Gtk.Label(label="DTG")
         lbl_sys_right.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         lbl_sys_right.get_style_context().add_class('size_small')
-        grid.attach(lbl_sys_right, 3, 0, 1, 1)
+        lbl_sys_right.set_halign(Gtk.Align.END)
+        lbl_sys_right.set_valign(Gtk.Align.START)
+        lbl_sys_right.set_vexpand(True)
+        lbl_sys_right.set_margin_top(3)
+
+
+
+        grid.attach(lbl_sys_right, 0, 0, 1, 1)
         self.widgets["lbl_sys_right"] = lbl_sys_right
 
         dro_right = Gtk.Label(label = "22.000")
         dro_right.get_style_context().add_provider(self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         dro_right.get_style_context().add_class('size_medium')
-        dro_right.set_hexpand(True)
+        # dro_right.set_hexpand(True)
         dro_right.set_halign(Gtk.Align.END)
+        dro_right.set_valign(Gtk.Align.END)
         
-        grid.attach(dro_right, 4, 0, 1, 1)
+        grid.attach(dro_right, 0, 1, 1, 1)
         self.widgets["dro_right"] = dro_right
 
         eventbox.connect("button_press_event", self._on_eventbox_clicked)
