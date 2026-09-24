@@ -30,6 +30,8 @@
 #define PORT_DEFAULT        "/dev/ttyUSB0"
 #define SERIAL_TIMEOUT_MS   500
 
+// #define DEBUG
+
 #define COMMAND_START               0x24
 #define RESPONSE_START              0xE4
 #define COMMAND_STOP                0x25
@@ -370,6 +372,7 @@ static int set_speed(double *current_rpm, double target_rpm)
     }
     *current_rpm = target_rpm;
 
+    #ifdef DEBUG
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
 
@@ -378,6 +381,7 @@ static int set_speed(double *current_rpm, double target_rpm)
 
     printf("%02d:%02d:%02d.%03ld ", tm.tm_hour, tm.tm_min, tm.tm_sec, now.tv_nsec / 1000000);
     printf("Set Speed: %u\n", (unsigned)response_value * 10u);
+    #endif
     return 0;
 }
 
@@ -397,7 +401,9 @@ static int start_spindle(double *current_rpm, double target_rpm, bool dir_cw)
 
     if (read_word(COMMAND_START, RESPONSE_START, &response_value) != 0)
         return -1;
+    #ifdef DEBUG
     printf("Start: 0x%X\n", response_value);
+    #endif
     return 0;
 }
 
@@ -408,8 +414,9 @@ static int stop_spindle(void)
         fprintf(stderr, "bmr_sfu: stop failed\n");
         return -1;
     }
-
+    #ifdef DEBUG
     printf("Stop: 0x%X\n", value);
+    #endif
     return 0;
 }
 
@@ -491,8 +498,9 @@ int main(int argc, char **argv)
         hal_exit(comp_id);
         return EXIT_FAILURE;
     }
-
+    #ifdef DEBUG
     printf("Connected to %s @ 115200 baud\n", port);
+    #endif
     
     // For input pins
     bool spindle_start;
