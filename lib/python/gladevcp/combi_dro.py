@@ -104,11 +104,13 @@ class Combi_DRO(Gtk.Box):
                     'exit': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
                    }
 
+    instances = 0
     # Init the class
     def __init__(self, joint_number = 0):
         super(Combi_DRO, self).__init__()
         self.set_orientation(Gtk.Orientation.VERTICAL)
 
+        Combi_DRO.instances +=1
         # we have to distinguish this, as we use the joints number to check homing
         # and we do need the axis to check for the positions
         # this is needed if non trivial kinematics are used or just a lathe,
@@ -181,6 +183,8 @@ class Combi_DRO(Gtk.Box):
         grid_left.set_margin_bottom(3)
         grid_left.set_hexpand(False)
         grid_left.set_hexpand_set(True)
+        grid_left.set_vexpand(False)
+        grid_left.set_vexpand_set(True)
         self.widgets["grid_left"] = grid_left
         
         grid = Gtk.Grid()
@@ -194,6 +198,8 @@ class Combi_DRO(Gtk.Box):
         grid.set_margin_bottom(3)
         grid.set_hexpand(False)
         grid.set_hexpand_set(True)
+        grid.set_vexpand(False)
+        grid.set_vexpand_set(True)
         hbox_main.pack_start(grid_left, True, True, 0)
         hbox_main.pack_start(grid, True, True, 0)
         grid.set_halign(Gtk.Align.END)
@@ -224,7 +230,8 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_main.set_margin_top(3)
         lbl_sys_main.set_vexpand(True)
 
-        grid_left.attach(lbl_sys_main, 1, 0, 1, 1)
+        if Combi_DRO.instances == 1:
+            grid_left.attach(lbl_sys_main, 1, 0, 1, 1)
         self.widgets["lbl_sys_main"] = lbl_sys_main
         
         main_dro = Gtk.Label(label = "9999.000")
@@ -266,8 +273,8 @@ class Combi_DRO(Gtk.Box):
         lbl_sys_right.set_margin_top(3)
 
 
-
-        grid.attach(lbl_sys_right, 0, 0, 1, 1)
+        if Combi_DRO.instances == 1:
+            grid.attach(lbl_sys_right, 0, 0, 1, 1)
         self.widgets["lbl_sys_right"] = lbl_sys_right
 
         dro_right = Gtk.Label(label = "22.000")
@@ -276,6 +283,8 @@ class Combi_DRO(Gtk.Box):
         # dro_right.set_hexpand(True)
         dro_right.set_halign(Gtk.Align.END)
         dro_right.set_valign(Gtk.Align.END)
+        dro_right.set_vexpand(True)
+
         
         grid.attach(dro_right, 0, 1, 1, 1)
         self.widgets["dro_right"] = dro_right
