@@ -65,6 +65,9 @@ typedef struct {
     hal_bit_t *spindle_cw;
     hal_bit_t *spindle_ccw;
     hal_float_t *spindle_rpm;
+    hal_float_t *loop_time;
+    hal_float_t *ramp_rpm;
+    hal_float_t *min_rpm;
 
     hal_bit_t *running;
     hal_bit_t *target_speed_reached;
@@ -366,6 +369,14 @@ static int set_speed(double *current_rpm, double target_rpm)
         return -1;
     }
     *current_rpm = target_rpm;
+
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+
+    struct tm tm;
+    localtime_r(&now.tv_sec, &tm);
+
+    printf("%02d:%02d:%02d.%03ld ", tm.tm_hour, tm.tm_min, tm.tm_sec, now.tv_nsec / 1000000);
     printf("Set Speed: %u\n", (unsigned)response_value * 10u);
     return 0;
 }
@@ -450,6 +461,12 @@ int main(int argc, char **argv)
     HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_cw, comp_id, modname, spindle-cw, 1);
     HAL_PIN_NEW(bit, HAL_IN, haldata->spindle_ccw, comp_id, modname, spindle-ccw, 0);
     HAL_PIN_NEW(float, HAL_IN, haldata->spindle_rpm, comp_id, modname, spindle-rpm, 5000.0);
+
+    HAL_PIN_NEW(float, HAL_IN, haldata->loop_time, comp_id, modname, loop-time, 0.1);
+    HAL_PIN_NEW(float, HAL_IN, haldata->ramp_rpm, comp_id, modname, ramp-rpm, 5000.0);
+    HAL_PIN_NEW(float, HAL_IN, haldata->min_rpm, comp_id, modname, min-rpm, 2000.0);
+
+
     HAL_PIN_NEW(bit, HAL_OUT, haldata->running, comp_id, modname, status.running, 0);
     HAL_PIN_NEW(bit, HAL_OUT, haldata->target_speed_reached, comp_id, modname, status.target-speed-reached, 0);
     HAL_PIN_NEW(bit, HAL_OUT, haldata->stopped, comp_id, modname, status.stopped, 0);
@@ -477,30 +494,48 @@ int main(int argc, char **argv)
 
     printf("Connected to %s @ 115200 baud\n", port);
     
-    bool spindle_dir_cw = true;
+    // For input pins
     bool spindle_start;
     bool spindle_cw;
     bool spindle_ccw;
     double spindle_rpm;
-    bool spindle_start_last = false;
-    bool spindle_cw_last = true;
-    bool spindle_ccw_last = false;
-    double current_rpm = 0;
-    bool request_start = false;
+    double min_rpm;
+    double ramp_step_rpm;
+
+    // For output pins
     uint16_t status_word;
     uint16_t current_raw;
     uint16_t voltage_raw;
     uint16_t speed_raw;
+    
     SpindleStatus status;
-    double min_rpm = 2000.0;         // --> pin
-    double ramp_step_rpm = 500;      // rpm/looptime
-    int looptime = 10000;            // --> pin
-    double commanded_rpm = min_rpm;
-    bool spindle_running = false;
+    bool spindle_dir_cw = true;
+    bool spindle_start_last = false;
+    bool spindle_cw_last = true;
+    bool spindle_ccw_last = false;
+    bool request_start = false;
     bool request_stop = false;
+    bool spindle_running = false;
+    double current_rpm = 0;
+    double commanded_rpm = 0;
     double target_rpm;
 
+    struct timespec now;
+    struct timespec next;
+    long period_ns;
+
     while (!done) {
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        next = now;
+        period_ns = (long)(*(haldata->loop_time) * 1000000000.0);
+
+        next.tv_sec += (time_t)(period_ns / 1000000000L);
+        next.tv_nsec += (long)(period_ns % 1000000000L);
+        while (next.tv_nsec >= 1000000000L) {
+            next.tv_nsec -= 1000000000L;
+            next.tv_sec += 1;
+        }
+
         if (serial_fd < 0) {
             serial_fd = configure_serial(port);
             if (serial_fd < 0) {
@@ -517,6 +552,8 @@ int main(int argc, char **argv)
         spindle_cw = *(haldata->spindle_cw);
         spindle_ccw = *(haldata->spindle_ccw);
         spindle_rpm = fabs(*(haldata->spindle_rpm));
+        min_rpm = *(haldata->min_rpm);
+        ramp_step_rpm = *(haldata->ramp_rpm) * *(haldata->loop_time);
 
         // Read status data
         if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0) {
@@ -637,7 +674,8 @@ int main(int argc, char **argv)
             commanded_rpm = current_rpm;
         }
 
-        usleep(looptime);
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL);
+
     }
 
     exit_code = EXIT_SUCCESS;
