@@ -357,12 +357,24 @@ static SpindleStatus get_status_bits(uint16_t status)
     };
     return s;
 }
-static int start_spindle(double spindle_rpm, bool dir_cw)
+
+static int set_speed(double *current_rpm, double target_rpm) 
 {
     uint16_t response_value;
-    if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(spindle_rpm / 10.0), &response_value) != 0)
+    if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(fabs(target_rpm) / 10.0), &response_value) != 0) {
+        fprintf(stderr, "bmr_sfu: set speed failed\n");
         return -1;
+    }
+    *current_rpm = target_rpm;
     printf("Set Speed: %u\n", (unsigned)response_value * 10u);
+    return 0;
+}
+
+static int start_spindle(double *current_rpm, double target_rpm, bool dir_cw)
+{
+    uint16_t response_value;
+    if (set_speed(current_rpm, target_rpm) != 0)
+        return -1;
 
     if (dir_cw) {
         if (write_word(COMMAND_SET_DIR_CW, RESPONSE_SET_DIR_CW, 0, &response_value) != 0)
@@ -381,8 +393,10 @@ static int start_spindle(double spindle_rpm, bool dir_cw)
 static int stop_spindle(void)
 {
     uint16_t value;
-    if (read_word(COMMAND_STOP, RESPONSE_STOP, &value) != 0)
+    if (read_word(COMMAND_STOP, RESPONSE_STOP, &value) != 0) {
+        fprintf(stderr, "bmr_sfu: stop failed\n");
         return -1;
+    }
 
     printf("Stop: 0x%X\n", value);
     return 0;
@@ -471,14 +485,20 @@ int main(int argc, char **argv)
     bool spindle_start_last = false;
     bool spindle_cw_last = true;
     bool spindle_ccw_last = false;
-    double spindle_rpm_last = 5000;
-    uint16_t response_value;
+    double current_rpm = 0;
     bool request_start = false;
     uint16_t status_word;
     uint16_t current_raw;
     uint16_t voltage_raw;
     uint16_t speed_raw;
     SpindleStatus status;
+    double min_rpm = 2000.0;         // --> pin
+    double ramp_step_rpm = 500;      // rpm/looptime
+    int looptime = 10000;            // --> pin
+    double commanded_rpm = min_rpm;
+    bool spindle_running = false;
+    bool request_stop = false;
+    double target_rpm;
 
     while (!done) {
         if (serial_fd < 0) {
@@ -496,7 +516,7 @@ int main(int argc, char **argv)
         spindle_start = *(haldata->spindle_start);
         spindle_cw = *(haldata->spindle_cw);
         spindle_ccw = *(haldata->spindle_ccw);
-        spindle_rpm = *(haldata->spindle_rpm);
+        spindle_rpm = fabs(*(haldata->spindle_rpm));
 
         // Read status data
         if (write_word(COMMAND_SET_DP, RESPONSE_SET_DP, ADDR_STATUS, &status_word) != 0) {
@@ -534,20 +554,19 @@ int main(int argc, char **argv)
         }
         *(haldata->current) = current_raw / 100.0;
         *(haldata->voltage) = voltage_raw / 10.0;
-        *(haldata->rpm_feedback) = speed_raw * (spindle_dir_cw?10:-10);
+        *(haldata->rpm_feedback) = speed_raw * (spindle_dir_cw?10.0:-10.0);
 
         // Start pin changed
         if (spindle_start != spindle_start_last) {
             spindle_start_last = spindle_start;
             if (spindle_start) {
-                request_start = true;
-
-            } else {
-                if (stop_spindle() != 0) {
-                    fprintf(stderr, "bmr_sfu: stop failed\n");
-                    set_comm_error(haldata, true);
-                    continue;
+                if (spindle_rpm > min_rpm) {
+                    request_start = true;
+                    request_stop = false;
                 }
+            } else {
+                request_stop = true;
+                request_start = false;
             }
         }
         
@@ -555,25 +574,9 @@ int main(int argc, char **argv)
         if (spindle_cw != spindle_cw_last || spindle_ccw != spindle_ccw_last) {
             spindle_cw_last = spindle_cw;
             spindle_ccw_last = spindle_ccw;
-            if (spindle_start) {
-                if (stop_spindle() != 0) {
-                    set_comm_error(haldata, true);
-                    continue;
-                }
+            if (spindle_running && spindle_start) {
+                request_stop = true;
                 request_start = true;
-            }
-        }
-
-        // Speed changed
-        if (spindle_rpm != spindle_rpm_last) {
-            spindle_rpm_last = spindle_rpm;
-            if (!request_start){ // Prevent sending the speed command twice
-                if (write_word(COMMAND_SET_SPEED, RESPONSE_SET_SPEED, (uint16_t)(fabs(spindle_rpm) / 10.0), &response_value) != 0) {
-                    fprintf(stderr, "bmr_sfu: set speed failed\n");
-                    set_comm_error(haldata, true);
-                    continue;
-                }
-                printf("Set Speed: %u\n", (unsigned)response_value * 10u);
             }
         }
 
@@ -584,18 +587,57 @@ int main(int argc, char **argv)
                 else if (!spindle_cw && spindle_ccw) spindle_dir_cw = false;
                 else continue;
 
-                if (start_spindle(fabs(spindle_rpm), spindle_dir_cw) != 0) {
+                if (start_spindle(&current_rpm, min_rpm, spindle_dir_cw) != 0) {
                     fprintf(stderr, "bmr_sfu: start failed\n");
                     set_comm_error(haldata, true);
-                    request_start = false;
                     continue;
                 }
+                commanded_rpm = min_rpm;
                 request_start = false;
+                spindle_running = true;
             }
         }
 
-        
-        usleep(10000);
+        // Wait until ramped down to min_rpm before sending stop command
+        if (request_stop && current_rpm <= min_rpm) {
+            if (stop_spindle() != 0) {
+                set_comm_error(haldata, true);
+                continue;
+            }
+            request_stop = false;
+            spindle_running = false;
+        }
+
+        // Ramp down to min_rpm if stop requested, otherwise take value from pin
+        if (request_stop) {
+            target_rpm = min_rpm;
+        } else {
+            target_rpm = spindle_rpm;
+        }
+
+        // Ramp spindle
+        if (target_rpm != current_rpm && spindle_running) { // it is probably bad to compare floats
+            if (target_rpm > current_rpm) {
+                if(commanded_rpm + ramp_step_rpm < spindle_rpm){
+                    commanded_rpm += ramp_step_rpm;
+                } else {
+                    commanded_rpm = spindle_rpm;
+                } 
+            } else {
+                if (commanded_rpm - ramp_step_rpm > min_rpm)
+                    commanded_rpm -= ramp_step_rpm;
+                else {
+                    commanded_rpm = min_rpm;
+                }
+            }
+            if (set_speed(&current_rpm, commanded_rpm) == -1) {
+                set_comm_error(haldata, true);
+                continue;
+            }
+            commanded_rpm = current_rpm;
+        }
+
+        usleep(looptime);
     }
 
     exit_code = EXIT_SUCCESS;
