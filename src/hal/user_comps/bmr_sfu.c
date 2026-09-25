@@ -445,8 +445,12 @@ int main(int argc, char **argv)
     sa.sa_handler = handle_sigint;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGINT, &sa, NULL) != 0) {
-        fprintf(stderr, "sigaction: %s\n", strerror(errno));
-        return EXIT_FAILURE;
+        fprintf(stderr,"failed to set SIGINT handler: %s\n", strerror(errno));
+        exit(1);
+    }
+    if (sigaction(SIGTERM, &sa, NULL) != 0) {
+        fprintf(stderr,"failed to set SIGTERM handler: %s\n", strerror(errno));
+        exit(1);
     }
 
     comp_id = hal_init(modname);
@@ -657,7 +661,7 @@ int main(int argc, char **argv)
     stop_spindle();
 
     if (done) {
-        printf("\nStopped\n");
+        printf("\nBMR_SFU: Exit...\n");
     }
 
     if (serial_fd >= 0) {
